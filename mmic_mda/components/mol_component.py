@@ -1,8 +1,7 @@
-from mmic.components.blueprints.generic_component import GenericComponent
+from mmelemental.components.trans.template_component import TransComponent
 from mmelemental.models.util.output import FileOutput
-from mmelemental.models.molecule.mda_molecule import MdaMolecule
-from mmelemental.models.molecule.io_molecule import MolInput
-from mmelemental.models.molecule.mm_molecule import Molecule
+from mmelemental.models.molecule.mm_mol import Mol
+from mmic_mda.models import MdaMol
 from typing import Dict, Any, List, Tuple, Optional
 
 try:
@@ -10,71 +9,104 @@ try:
 except:
     raise ModuleNotFoundError('Make sure MDAnalysis is installed.')
 
-class MolToMdaComponent(GenericComponent):
+class MolToMdaComponent(TransComponent):
     """ A component for converting Molecule to MDAnalysis molecule object. """
     @classmethod
     def input(cls):
-        return Molecule
+        return Mol
 
     @classmethod
     def output(cls):
-        return MdaMolecule
+        return MdaMol
 
     def execute(
         self,
-        inputs: Dict[str, Any],
+        inputs: Mol,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, MdaMolecule]:
+    ) -> Tuple[bool, MdaMol]:
 
-        # do stuff here to build mmol from inputs
+        natoms = len(inputs.masses)
 
-        return True, MdaMolecule(mol=mmol)
+        if inputs.residues:
+            nres = len(inputs.residues)
+            resnames, resids = zip(*inputs.residues)
+        
+        # Must account for segments as well
+        segindices = None
 
-class MdaToMolComponent(GenericComponent):
+        mda_mol = Universe.empty(natoms, n_residues=nres, atom_resindex=resids,
+            residue_segindex=segindices, trajectory=True)
+
+        mda_mol.add_TopologyAttr('type', inputs.symbols)
+        mda_mol.add_TopologyAttr('mass', inputs.masses)
+
+        if inputs.names:
+            mda_mol.add_TopologyAttr('name', inputs.names)
+        
+        if inputs.residues:
+            mda_mol.add_TopologyAttr('resname', resnames)
+            mda_mol.add_TopologyAttr('resid', resids)
+
+        #mda_mol.add_TopologyAttr('segid', ['SOL'])
+
+        if inputs.geometry is not None:
+            mda_mol.atoms.positions = inputs.geometry.reshape(natoms,3)
+
+        if inputs.velocities is not None:
+            mda_mol.atoms.velocities = inputs.velocities.reshape(natoms,3)
+
+        if inputs.forces is not None:
+            mda_mol.atoms.positions = inputs.forces.reshape(natoms,3)
+
+        if inputs.connectivity:
+            bonds = [(bond[0], bond[1]) for bond in inputs.connectivity]
+            mda_mol.add_TopologyAttr('bonds', bonds)
+            # How to load bond order?
+
+        return True, MdaMol(mol=mda_mol)
+
+class MdaToMolComponent(TransComponent):
     """ A component for converting MDAnalysis molecule to Molecule object. """
 
     @classmethod
     def input(cls):
-        return MolInput
+        return MdaMol
 
     @classmethod
     def output(cls):
-        return Molecule
+        return Mol
 
     def execute(
         self,
-        inputs: Dict[str, Any],
+        inputs: MdaMol,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
-        timeout: Optional[int] = None) -> Tuple[bool, Dict[str, Any]]:
+        timeout: Optional[int] = None) -> Tuple[bool, Mol]:
         
-        if inputs.data:
-            dtype = inputs.data.dtype
-            assert dtype == 'mdanalysis'
-            pmol = inputs.data
-        elif inputs.code:
-            raise NotImplementedError('MDAnalysis does not support instantiating molecule objects from chemical codes.')          
-        elif inputs.file:
-            dtype = inputs.file.ext
-            mmol = MdaMolecule.build(inputs, dtype)
-        else:
-            raise NotImplementedError(f'Data type {dtype} not yet supported.')
-        
-        if inputs.args:
-            orient = inputs.args.get('orient')
-            validate = inputs.args.get('validate')
-            kwargs = inputs.args.get('kwargs')
-        else:
-            orient, validate, kwargs = False, None, None
+        assert inputs.dtype == 'mdanalysis'
+        orient, validate, kwargs = False, None, None
 
         # get all properties + more from Universe?
+        uni = inputs.mol
+        geo = TransComponent.get(uni.atoms, 'positions')
+        vel = TransComponent.get(uni.atoms, 'velocities')
+        forces = TransComponent.get(uni.atoms, 'forces')
+        symbs = TransComponent.get(uni.atoms, 'types')
+        names = TransComponent.get(uni.atoms, 'names')
+        masses = TransComponent.get(uni.atoms, 'masses')
+
+        # If bond order is none, set it to 1.
+        connectivity = [(bond.indices[0], bond.indices[1], bond.order or 1) for bond in uni.atoms.bonds]
+        residues = [(atom.resname, atom.resnum) for atom in uni.atoms]
 
         input_dict = {'symbols': symbs, 
                       'geometry': geo, 
+                      'velocities': vel,
+                      'forces': forces,
                       'residues': residues, 
                       'connectivity': connectivity,
                       'masses': masses,
@@ -83,7 +115,4 @@ class MdaToMolComponent(GenericComponent):
         if kwargs:
             input_dict.update(kwargs)
 
-        if inputs.code:
-            return True, Molecule(orient=orient, validate=validate, identifiers={dtype: inputs.code}, **input_dict)
-        else:
-            return True, Molecule(orient=orient, validate=validate, **input_dict)
+        return True, Mol(orient=orient, validate=validate, **input_dict)
