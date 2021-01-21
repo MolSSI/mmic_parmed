@@ -1,13 +1,13 @@
-from pydantic import Field, validator
-from typing import List, Dict, Any
-from .gen_molecule import ToolkitMolecule
+from pydantic import Field
+from typing import Dict, Any
+from mmelemental.models.molecule.gen_mol import ToolkitMol
 
 try:
     import MDAnalysis
 except:
     raise ModuleNotFoundError('Make sure MDAnalysis is installed.')
 
-class MdaMolecule(ToolkitMolecule):
+class MdaMol(ToolkitMol):
     mol: MDAnalysis.Universe = Field(..., description = 'MDAnalysis molecule object.')
 
     @property
@@ -15,9 +15,9 @@ class MdaMolecule(ToolkitMolecule):
         return 'mdanalysis'   
 
     @classmethod
-    def build(cls, inputs: Dict[str, Any], dtype: str) -> "MdaMolecule":
+    def build(cls, inputs: Dict[str, Any], dtype: str) -> "MdaMol":
         """
-        Creates an instance of MdaMolecule object storing MDAnalysis.Universe. 
+        Creates an instance of MdaMol object storing MDAnalysis.Universe. 
         This is done by parsing an input file (pdb, gro, ...).
         """
         if inputs.file:
