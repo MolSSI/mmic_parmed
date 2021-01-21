@@ -4,7 +4,7 @@ A short description of the project.
 """
 
 # Add imports here
-from .mmic_mda import *
+from . import components, models
 
 # Handle versioneer
 from ._version import get_versions
