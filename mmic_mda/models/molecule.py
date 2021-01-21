@@ -5,19 +5,20 @@ from mmelemental.models.molecule.gen_mol import ToolkitMol
 try:
     import MDAnalysis
 except:
-    raise ModuleNotFoundError('Make sure MDAnalysis is installed.')
+    raise ModuleNotFoundError("Make sure MDAnalysis is installed.")
+
 
 class MdaMol(ToolkitMol):
-    mol: MDAnalysis.Universe = Field(..., description = 'MDAnalysis molecule object.')
+    mol: MDAnalysis.Universe = Field(..., description="MDAnalysis molecule object.")
 
     @property
     def dtype(self):
-        return 'mdanalysis'   
+        return "mdanalysis"
 
     @classmethod
     def build(cls, inputs: Dict[str, Any], dtype: str) -> "MdaMol":
         """
-        Creates an instance of MdaMol object storing MDAnalysis.Universe. 
+        Creates an instance of MdaMol object storing MDAnalysis.Universe.
         This is done by parsing an input file (pdb, gro, ...).
         """
         if inputs.file:
@@ -35,6 +36,6 @@ class MdaMol(ToolkitMol):
                 raise ValueError(f"File type not supported: {inputs.file.ext}")
 
         elif inputs.code:
-            raise NotImplementedError('No support for Chemical codes with MDAnalysis.')
+            raise NotImplementedError("No support for Chemical codes with MDAnalysis.")
 
         return cls(mol=mmol)
