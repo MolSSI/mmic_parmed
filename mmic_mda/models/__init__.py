@@ -1,1 +1,1 @@
-from .molecule import MdaMolecule
+from .mol import MdaMol
