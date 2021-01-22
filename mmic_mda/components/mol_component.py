@@ -50,10 +50,10 @@ class MolToMdaComponent(TransComponent):
         mda_mol.add_TopologyAttr("type", inputs.symbols)
         mda_mol.add_TopologyAttr("mass", inputs.masses)
 
-        if inputs.names:
+        if inputs.names is not None:
             mda_mol.add_TopologyAttr("name", inputs.names)
 
-        if inputs.residues:
+        if inputs.residues is not None:
             mda_mol.add_TopologyAttr("resname", resnames)
             mda_mol.add_TopologyAttr("resid", resids)
 
@@ -96,7 +96,6 @@ class MdaToMolComponent(TransComponent):
         timeout: Optional[int] = None,
     ) -> Tuple[bool, Mol]:
 
-        assert inputs.dtype == "mdanalysis"
         orient, validate, kwargs = False, None, None
 
         # get all properties + more from Universe?
@@ -109,10 +108,14 @@ class MdaToMolComponent(TransComponent):
         masses = TransComponent.get(uni.atoms, "masses")
 
         # If bond order is none, set it to 1.
-        connectivity = [
-            (bond.indices[0], bond.indices[1], bond.order or 1)
-            for bond in uni.atoms.bonds
-        ]
+        if hasattr(uni.atoms, "bonds"):
+            connectivity = [
+                (bond.indices[0], bond.indices[1], bond.order or 1)
+                for bond in uni.atoms.bonds
+            ]
+        else:
+            connectivity = None
+
         residues = [(atom.resname, atom.resnum) for atom in uni.atoms]
 
         input_dict = {
