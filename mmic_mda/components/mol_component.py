@@ -73,7 +73,7 @@ class MolToMdaComponent(TransComponent):
             mda_mol.add_TopologyAttr("bonds", bonds)
             # How to load bond order?
 
-        return True, MdaMol(mol=mda_mol)
+        return True, MdaMol(data=mda_mol)
 
 
 class MdaToMolComponent(TransComponent):
@@ -99,7 +99,7 @@ class MdaToMolComponent(TransComponent):
         orient, validate, kwargs = False, None, None
 
         # get all properties + more from Universe?
-        uni = inputs.mol
+        uni = inputs.data
         geo = TransComponent.get(uni.atoms, "positions")
         vel = TransComponent.get(uni.atoms, "velocities")
         forces = TransComponent.get(uni.atoms, "forces")

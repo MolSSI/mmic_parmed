@@ -20,10 +20,10 @@ class MdaMol(ToolkitMol):
 
     def sanity_check(self):
         """ Makes sure the Universe object stores Atoms. """
-        if not hasattr(self.mol, "atoms"):
+        if not hasattr(self.data, "atoms"):
             raise ValueError("MDAnalysis Universe does not contain any Atoms!")
 
-        if len(self.mol.atoms) <= 0:
+        if len(self.data.atoms) <= 0:
             raise ValueError("MDAnalysis Universe does not contain any Atoms!")
 
     @classmethod
@@ -65,13 +65,13 @@ class MdaMol(ToolkitMol):
                 "You must supply at least one of the following: filename or top_filename."
             )
 
-        return cls(mol=mol)
+        return cls(data=mol)
 
     @classmethod
-    def from_data(
+    def from_schema(
         cls,
         data: Mol,
-        dtype: Optional[str] = None,
+        version: Optional[str] = None,
         **kwargs: Dict[str, Any],
     ) -> "Mol":
         """
@@ -79,9 +79,9 @@ class MdaMol(ToolkitMol):
         Parameters
         ----------
         data: Mol
-            Data to construct Molecule from
-        dtype: str, optional
-            How to interpret the data, if not passed attempts to discover this based on input type.
+            Data to construct Molecule from.
+        version: str, optional
+            Schema version e.g. 1.0.1
         **kwargs
             Additional kwargs to pass to the constructors. kwargs take precedence over data.
         Returns
@@ -101,14 +101,14 @@ class MdaMol(ToolkitMol):
             The filename to write to
         dtype : Optional[str], optional
         """
-        self.mol.atoms.write(filename, **kwargs)
+        self.data.atoms.write(filename, **kwargs)
 
-    def to_data(self, dtype: str = "MMSchema", **kwargs) -> Mol:
+    def to_schema(self, version: Optional[str] = None, **kwargs) -> Mol:
         """Converts the molecule to MMSchema molecule.
         Parameters
         ----------
-        dtype: str, optional
-            The type of data object to convert to.
+        version: str, optional
+            Schema version e.g. 1.0.1
         **kwargs
             Additional kwargs to pass to the constructor.
         """
