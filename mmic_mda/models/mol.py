@@ -1,41 +1,117 @@
 from pydantic import Field
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 from mmelemental.models.molecule.gen_mol import ToolkitMol
-
-try:
-    import MDAnalysis
-except:
-    raise ModuleNotFoundError("Make sure MDAnalysis is installed.")
+from mmelemental.models.molecule.mm_mol import Mol
+from mmelemental.util.decorators import require
 
 
 class MdaMol(ToolkitMol):
-    mol: MDAnalysis.Universe = Field(..., description="MDAnalysis molecule object.")
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.sanity_check()
 
     @property
+    @require("MDAnalysis")
     def dtype(self):
-        return "mdanalysis"
+        """ Returns the fundamental molecule object type. """
+        from MDAnalysis import Universe
+
+        return Universe
+
+    def sanity_check(self):
+        """ Makes sure the Universe object stores Atoms. """
+        if not hasattr(self.mol, "atoms"):
+            raise ValueError("MDAnalysis Universe does not contain any Atoms!")
+
+        if len(self.mol.atoms) <= 0:
+            raise ValueError("MDAnalysis Universe does not contain any Atoms!")
 
     @classmethod
-    def build(cls, inputs: Dict[str, Any], dtype: str) -> "MdaMol":
+    @require("MDAnalysis")
+    def from_file(
+        cls, filename: str = None, top_filename: str = None, dtype: str = None, **kwargs
+    ) -> "MdaMol":
         """
-        Creates an instance of MdaMol object storing MDAnalysis.Universe.
-        This is done by parsing an input file (pdb, gro, ...).
+        Constructs an instance of MdaMol object from file(s).
+
+        Parameters
+        ----------
+        filename : str, optional
+            The atomic positions filename to read
+        top_filename: str, optional
+            The topology filename to read
+        dtype: str, optional
+            The type of file to interpret. If unset, MDAnalysis attempts to discover dtype from the file extension.
+        **kwargs
+            Any additional keywords to pass to the constructor
+        Returns
+        -------
+        Mol
+            A constructed Mol class.
         """
-        if inputs.file:
-            coords_fname = inputs.file.path
-            if inputs.top_file:
-                top_fname = inputs.top_file.path
-            else:
-                top_fname = None
-            try:
-                if top_fname:
-                    mmol = MDAnalysis.Universe(top_fname, coords_fname)
-                else:
-                    mmol = MDAnalysis.Universe(coords_fname)
-            except:
-                raise ValueError(f"File type not supported: {inputs.file.ext}")
+        import MDAnalysis
 
-        elif inputs.code:
-            raise NotImplementedError("No support for Chemical codes with MDAnalysis.")
+        if dtype:
+            kwargs["format"] = dtype
 
-        return cls(mol=mmol)
+        if filename and top_filename:
+            mol = MDAnalysis.Universe(top_filename, filename, **kwargs)
+        elif filename:
+            mol = MDAnalysis.Universe(filename, **kwargs)
+        elif top_filename:
+            mol = MDAnalysis.Universe(top_filename, **kwargs)
+        else:
+            raise TypeError(
+                "You must supply at least one of the following: filename or top_filename."
+            )
+
+        return cls(mol=mol)
+
+    @classmethod
+    def from_data(
+        cls,
+        data: Mol,
+        dtype: Optional[str] = None,
+        **kwargs: Dict[str, Any],
+    ) -> "Mol":
+        """
+        Constructs a Mol object from an MMSchema molecule object.
+        Parameters
+        ----------
+        data: Mol
+            Data to construct Molecule from
+        dtype: str, optional
+            How to interpret the data, if not passed attempts to discover this based on input type.
+        **kwargs
+            Additional kwargs to pass to the constructors. kwargs take precedence over data.
+        Returns
+        -------
+        Mol
+            A constructed Mol class.
+        """
+        from mmic_mda.components.mol_component import MolToMdaComponent
+
+        return MolToMdaComponent.compute(data)
+
+    def to_file(self, filename: str, **kwargs):
+        """Writes the molecule to a file.
+        Parameters
+        ----------
+        filename : str
+            The filename to write to
+        dtype : Optional[str], optional
+        """
+        self.mol.atoms.write(filename, **kwargs)
+
+    def to_data(self, dtype: str = "MMSchema", **kwargs) -> Mol:
+        """Converts the molecule to MMSchema molecule.
+        Parameters
+        ----------
+        dtype: str, optional
+            The type of data object to convert to.
+        **kwargs
+            Additional kwargs to pass to the constructor.
+        """
+        from mmic_mda.components.mol_component import MdaToMolComponent
+
+        return MdaToMolComponent.compute(self)
