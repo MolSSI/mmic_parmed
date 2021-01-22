@@ -8,12 +8,28 @@ This is part of the [MolSSI](http://molssi.org) Molecular Mechanics Interoperabl
 
 ![image](mmic_mda/data/imgs/component.png)
 
-# MDAnalysis translator in action
+# Basic usage
+**mmic_mda** provides 3 classes of translators for: molecules, trajectories, and forcefields.
+
+## Molecules
+```python
+from mmic_mda.models import MdaMol
+
+# Convert MMSchema to MDAnalysis molecule
+mda_mol = MdaMol.from_schema(mm_mol) -> MDAnalysis.Universe
+
+# Convert MDAnalysis to MMSchema molecule
+mm_mol = MdaMol.to_schema(mda_mol) -> mmelemental.models.molecule.Mol
+
+```
+# Under the hood
+## Molecules
+The `from_schema` and `to_schema` methods in the `MdaMol` model use translation components provided by **mmic_mda** and **MMElemental** to convert between MMSchema and MDAnalysis.
 
 ```python
-from mmic_mda.components import Translator
-from mmic_mda.models.import TransInput, MdaMol
-from mmelemental.models import Mol
+from mmic_mda.components import MdaToMolComponent, MolToMdaComponent
+from mmic_mda.models.import MdaMol
+from mmelemental.models.molecule import Mol
 ```
 
 ### MMSchema to MDAnalysis molecule
@@ -22,10 +38,10 @@ from mmelemental.models import Mol
 mm_mol = Mol.from_file(path_to_file)
 
 # Preparing translation input for a molecule
-trans_input = TransInput(mol=mm_mol)
+trans_input = TransInput(mol=mda_mol)
 
 # Running compute
-mda_mol = Translator.compute(trans_input)
+mda_mol = MolToMdaComponent.compute(trans_input)
 ```
 
 ### MDAnalysis to MMSchema molecule
