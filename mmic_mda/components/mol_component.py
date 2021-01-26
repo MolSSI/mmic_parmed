@@ -3,11 +3,9 @@ from mmelemental.models.util.output import FileOutput
 from mmelemental.models.molecule.mm_mol import Mol
 from mmic_mda.models import MdaMol
 from typing import Dict, Any, List, Tuple, Optional
+from mmelemental.util.decorators import require
 
-try:
-    from MDAnalysis import Universe
-except:
-    raise ModuleNotFoundError("Make sure MDAnalysis is installed.")
+__all__ = ["MolToMdaComponent", "MdaToMolComponent"]
 
 
 class MolToMdaComponent(TransComponent):
@@ -21,6 +19,7 @@ class MolToMdaComponent(TransComponent):
     def output(cls):
         return MdaMol
 
+    @require("MDAnalysis")
     def execute(
         self,
         inputs: Mol,
@@ -29,6 +28,8 @@ class MolToMdaComponent(TransComponent):
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Tuple[bool, MdaMol]:
+
+        import MDAnalysis
 
         natoms = len(inputs.masses)
 
@@ -39,7 +40,7 @@ class MolToMdaComponent(TransComponent):
         # Must account for segments as well
         segindices = None
 
-        mda_mol = Universe.empty(
+        mda_mol = MDAnalysis.Universe.empty(
             natoms,
             n_residues=nres,
             atom_resindex=resids,
