@@ -34,7 +34,7 @@ class MdaMol(ToolkitModel):
         cls, filename: str = None, top_filename: str = None, dtype: str = None, **kwargs
     ) -> "MdaMol":
         """
-        Constructs an instance of MdaMol object from file(s).
+        Constructs an MdaMol object from file(s).
 
         Parameters
         ----------
@@ -48,8 +48,8 @@ class MdaMol(ToolkitModel):
             Any additional keywords to pass to the constructor
         Returns
         -------
-        Mol
-            A constructed Mol class.
+        MdaMol
+            A constructed MdaMol class.
         """
         import MDAnalysis
 
@@ -75,9 +75,9 @@ class MdaMol(ToolkitModel):
         data: Mol,
         version: Optional[str] = None,
         **kwargs: Dict[str, Any],
-    ) -> "Mol":
+    ) -> "MdaMol":
         """
-        Constructs a Mol object from an MMSchema molecule object.
+        Constructs an MdaMol object from an MMSchema Mol object.
         Parameters
         ----------
         data: Mol
@@ -88,21 +88,24 @@ class MdaMol(ToolkitModel):
             Additional kwargs to pass to the constructors. kwargs take precedence over data.
         Returns
         -------
-        Mol
-            A constructed Mol class.
+        MdaMol
+            A constructed MdaMol class.
         """
         from mmic_mda.components.mol_component import MolToMdaComponent
 
         return MolToMdaComponent.compute(data)
 
-    def to_file(self, filename: str, **kwargs):
+    def to_file(self, filename: str, dtype: str = None, **kwargs):
         """Writes the molecule to a file.
         Parameters
         ----------
         filename : str
             The filename to write to
         dtype : Optional[str], optional
+            File format
         """
+        if dtype:
+            kwargs["file_format"] = dtype
         self.data.atoms.write(filename, **kwargs)
 
     def to_schema(self, version: Optional[str] = None, **kwargs) -> Mol:
