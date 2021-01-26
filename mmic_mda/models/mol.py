@@ -1,14 +1,15 @@
-from pydantic import Field
+from pydantic import Field, validator
 from typing import Dict, Any, Optional
-from mmelemental.models.molecule.gen_mol import ToolkitMol
+from mmelemental.models.base import ToolkitModel
 from mmelemental.models.molecule.mm_mol import Mol
 from mmelemental.util.decorators import require
 
 
-class MdaMol(ToolkitMol):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.sanity_check()
+__all__ = ["MdaMol"]
+
+
+class MdaMol(ToolkitModel):
+    """ A model for MDAnalysis.Universe storing an MM molecule. """
 
     @property
     @require("MDAnalysis")
@@ -18,13 +19,14 @@ class MdaMol(ToolkitMol):
 
         return Universe
 
-    def sanity_check(self):
-        """ Makes sure the Universe object stores Atoms. """
-        if not hasattr(self.data, "atoms"):
-            raise ValueError("MDAnalysis Universe does not contain any Atoms!")
+    @validator("data")
+    def valid_mol(cls, data):
+        """ Makes sure the Universe object stores atoms. """
+        if hasattr(data, "atoms"):
+            if len(data.atoms):
+                return data
 
-        if len(self.data.atoms) <= 0:
-            raise ValueError("MDAnalysis Universe does not contain any Atoms!")
+        raise ValueError("MDAnalysis object does not contain any atoms!")
 
     @classmethod
     @require("MDAnalysis")
