@@ -1,4 +1,5 @@
-from .mol import MdaMol
+from .mol import *
+from .traj import *
 
 molread_ext_maps = {
     ".gro": "gro",
@@ -13,3 +14,5 @@ molwrite_ext_maps = {
     ".top": "top",
     ".psf": "psf",
 }
+
+classes_map = {"Mol": MdaMol, "Traj": MdaTraj}
