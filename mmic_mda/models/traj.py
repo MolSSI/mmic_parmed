@@ -1,7 +1,8 @@
 from pydantic import Field, validator
 from typing import Dict, Any, Optional
 from mmelemental.models.base import ToolkitModel
-from mmelemental.models.molecule.mm_mol import Mol
+from mmelemental.models.molecule import Mol
+from mmelemental.models.trajectory import Traj
 from mmelemental.util.decorators import require
 
 
@@ -67,7 +68,7 @@ class MdaTraj(ToolkitModel):
     @classmethod
     def from_schema(
         cls,
-        data: "Traj",
+        data: Traj,
         version: Optional[str] = None,
         **kwargs: Dict[str, Any],
     ) -> "Mol":
