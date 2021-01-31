@@ -9,7 +9,7 @@ This is part of the [MolSSI](http://molssi.org) Molecular Mechanics Interoperabl
 
 ![image](mmic_mda/data/imgs/component.png)
 
-# Basic usage
+# Basic API
 **mmic_mda** provides 3 classes of translators for: molecules, trajectories, and forcefields.
 
 ## Molecules
@@ -38,11 +38,8 @@ from mmelemental.models.molecule import Mol
 # Creating MMSchema molecule
 mm_mol = Mol.from_file(path_to_file)
 
-# Preparing translation input for a molecule
-trans_input = TransInput(mol=mda_mol)
-
-# Running compute
-mda_mol = MolToMdaComponent.compute(trans_input)
+# Running translator compute
+mda_mol = MolToMdaComponent.compute(mm_mol)
 ```
 
 ### MDAnalysis to MMSchema molecule
@@ -51,11 +48,8 @@ mda_mol = MolToMdaComponent.compute(trans_input)
 mda_uni = mda.Universe(path_to_file)
 mda_mol = mmic_mda.models.MdaMol(mol=mda_uni)
 
-# Preparing translation input for a molecule
-trans_input = TransInput(mol=mda_mol)
-
-# Running compute
-mm_mol = Translator.compute(trans_input)
+# Running translator compute
+mm_mol = Translator.compute(mda_mol)
 ```
 
 
