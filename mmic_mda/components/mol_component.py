@@ -4,6 +4,7 @@ from mmelemental.models.molecule.mm_mol import Mol
 from mmic_mda.models import MdaMol
 from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.decorators import require
+from mmelemental.util.units import convert
 
 __all__ = ["MolToMdaComponent", "MdaToMolComponent"]
 
@@ -30,6 +31,7 @@ class MolToMdaComponent(TransComponent):
     ) -> Tuple[bool, MdaMol]:
 
         import MDAnalysis
+        import mmic_mda
 
         natoms = len(inputs.masses)
 
@@ -50,6 +52,7 @@ class MolToMdaComponent(TransComponent):
 
         mda_mol.add_TopologyAttr("type", inputs.symbols)
         mda_mol.add_TopologyAttr("mass", inputs.masses)
+        convert(mda_mol.atoms.masses, inputs.masses_units, mmic_mda.units["mass"])
 
         if inputs.names is not None:
             mda_mol.add_TopologyAttr("name", inputs.names)
@@ -62,19 +65,28 @@ class MolToMdaComponent(TransComponent):
 
         if inputs.geometry is not None:
             mda_mol.atoms.positions = inputs.geometry.reshape(natoms, 3)
+            convert(
+                mda_mol.atoms.positions, inputs.geometry_units, mmic_mda.units["length"]
+            )
 
         if inputs.velocities is not None:
             mda_mol.atoms.velocities = inputs.velocities.reshape(natoms, 3)
+            convert(
+                mda_mol.atoms.velocities,
+                inputs.velocities_units,
+                mmic_mda.units["speed"],
+            )
 
         if inputs.forces is not None:
             mda_mol.atoms.positions = inputs.forces.reshape(natoms, 3)
+            convert(mda_mol.atoms.forces, inputs.forces_units, mmic_mda.units["force"])
 
         if inputs.connectivity:
             bonds = [(bond[0], bond[1]) for bond in inputs.connectivity]
             mda_mol.add_TopologyAttr("bonds", bonds)
             # How to load bond order?
 
-        return True, MdaMol(data=mda_mol)
+        return True, MdaMol(data=mda_mol, units=mmic_mda.units)
 
 
 class MdaToMolComponent(TransComponent):
