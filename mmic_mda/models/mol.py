@@ -113,7 +113,7 @@ class MdaMol(ToolkitModel):
         Parameters
         ----------
         version: str, optional
-            Schema version e.g. 1.0.1
+            Schema specification version to comply with e.g. 1.0.1.
         **kwargs
             Additional kwargs to pass to the constructor.
         """
