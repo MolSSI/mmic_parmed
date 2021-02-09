@@ -1,5 +1,5 @@
 """
-mmic_mda
+mmic_parmed
 A short description of the project.
 """
 

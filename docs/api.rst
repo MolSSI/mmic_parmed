@@ -4,4 +4,4 @@ API Documentation
 .. autosummary::
    :toctree: autosummary
 
-   mmic_mda.canvas
+   mmic_parmed.canvas

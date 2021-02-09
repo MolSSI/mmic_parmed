@@ -87,7 +87,7 @@ class MdaTraj(ToolkitModel):
         Mol
             A constructed Mol class.
         """
-        from mmic_mda.components.mol_component import MolToMdaComponent
+        from mmic_parmed.components.mol_component import MolToMdaComponent
 
         return MolToMdaComponent.compute(data)
 
@@ -110,6 +110,6 @@ class MdaTraj(ToolkitModel):
         **kwargs
             Additional kwargs to pass to the constructor.
         """
-        from mmic_mda.components.mol_component import MdaToMolComponent
+        from mmic_parmed.components.mol_component import MdaToMolComponent
 
         return MdaToMolComponent.compute(self)

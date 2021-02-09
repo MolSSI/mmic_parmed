@@ -18,12 +18,12 @@ import sys
 
 sys.path.insert(0, os.path.abspath(".."))
 
-import mmic_mda
+import mmic_parmed
 
 
 # -- Project information -----------------------------------------------------
 
-project = "mmic_mda"
+project = "mmic_parmed"
 copyright = (
     "2021, MolSSI. Project structure based on the "
     "Computational Molecular Science Python Cookiecutter version 1.5"
@@ -120,7 +120,7 @@ html_static_path = ["_static"]
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = "mmic_mdadoc"
+htmlhelp_basename = "mmic_parmeddoc"
 
 
 # -- Options for LaTeX output ------------------------------------------------
@@ -144,7 +144,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "mmic_mda.tex", "mmic_mda Documentation", "mmic_mda", "manual"),
+    (master_doc, "mmic_parmed.tex", "mmic_parmed Documentation", "mmic_parmed", "manual"),
 ]
 
 
@@ -152,7 +152,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "mmic_mda", "mmic_mda Documentation", [author], 1)]
+man_pages = [(master_doc, "mmic_parmed", "mmic_parmed Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------------
@@ -163,10 +163,10 @@ man_pages = [(master_doc, "mmic_mda", "mmic_mda Documentation", [author], 1)]
 texinfo_documents = [
     (
         master_doc,
-        "mmic_mda",
-        "mmic_mda Documentation",
+        "mmic_parmed",
+        "mmic_parmed Documentation",
         author,
-        "mmic_mda",
+        "mmic_parmed",
         "A short description of the project.",
         "Miscellaneous",
     ),

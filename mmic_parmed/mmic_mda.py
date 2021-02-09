@@ -1,5 +1,5 @@
 """
-mmic_mda.py
+mmic_parmed.py
 A short description of the project.
 
 Handles the primary functions

@@ -1,7 +1,7 @@
 from mmelemental.components.trans.template_component import TransComponent
 from mmelemental.models.util.output import FileOutput
 from mmelemental.models.trajectory.mm_traj import Traj, Frame
-from mmic_mda.models import MdaMol, MdaTraj
+from mmic_parmed.models import MdaMol, MdaTraj
 from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.decorators import require
 

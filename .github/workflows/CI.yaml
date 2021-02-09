@@ -69,7 +69,7 @@ jobs:
       shell: bash
 
       run: |
-        pytest -v --cov=mmic_mda --cov-report=xml --color=yes mmic_mda/tests/
+        pytest -v --cov=mmic_parmed --cov-report=xml --color=yes mmic_parmed/tests/
 
     - name: CodeCov
       uses: codecov/codecov-action@v1

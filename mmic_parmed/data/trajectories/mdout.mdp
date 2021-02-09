@@ -9,7 +9,7 @@
 ;	
 ;	Executable:   /usr/bin/gmx
 ;	Data prefix:  /usr
-;	Working dir:  /mnt/c/Users/levnon/Desktop/Projects/mmic_mda/mmic_mda/data/dynamics
+;	Working dir:  /mnt/c/Users/levnon/Desktop/Projects/mmic_parmed/mmic_parmed/data/dynamics
 ;	Command line:
 ;	  gmx grompp -f md.mdp -c ../min/1dzl_min.gro -p topol.top -r ../min/1dzl_min.gro -maxwarn 1
 

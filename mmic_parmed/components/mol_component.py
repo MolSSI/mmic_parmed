@@ -1,7 +1,7 @@
 from mmelemental.components.trans.template_component import TransComponent
 from mmelemental.models.util.output import FileOutput
 from mmelemental.models.molecule.mm_mol import Mol
-from mmic_mda.models import MdaMol
+from mmic_parmed.models import MdaMol
 from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.decorators import require
 from mmelemental.util.units import convert
@@ -31,13 +31,19 @@ class MolToMdaComponent(TransComponent):
     ) -> Tuple[bool, MdaMol]:
 
         import MDAnalysis
-        import mmic_mda
+        import mmic_parmed
 
         natoms = len(inputs.masses)
 
         if inputs.residues:
-            nres = len(inputs.residues)
-            resnames, resids = zip(*inputs.residues)
+            residues = list(fast_set(inputs.residues))
+            nres = len(residues)
+            resnames, _ = zip(*residues)
+            _, resids = zip(*inputs.residues)
+            resids = [i-1 for i in resids]
+        else:
+            nres = 1
+            resnames, resids = "UNK", [1]
 
         # Must account for segments as well
         segindices = None
@@ -52,21 +58,22 @@ class MolToMdaComponent(TransComponent):
 
         mda_mol.add_TopologyAttr("type", inputs.symbols)
         mda_mol.add_TopologyAttr("mass", inputs.masses)
-        convert(mda_mol.atoms.masses, inputs.masses_units, mmic_mda.units["mass"])
+        convert(mda_mol.atoms.masses, inputs.masses_units, mmic_parmed.units["mass"])
 
         if inputs.names is not None:
             mda_mol.add_TopologyAttr("name", inputs.names)
 
         if inputs.residues is not None:
+            print("residues = ", resnames, resids)
             mda_mol.add_TopologyAttr("resname", resnames)
-            mda_mol.add_TopologyAttr("resid", resids)
+            #mda_mol.add_TopologyAttr("resid", resids)
 
         # mda_mol.add_TopologyAttr('segid', ['SOL'])
 
         if inputs.geometry is not None:
             mda_mol.atoms.positions = inputs.geometry.reshape(natoms, 3)
             convert(
-                mda_mol.atoms.positions, inputs.geometry_units, mmic_mda.units["length"]
+                mda_mol.atoms.positions, inputs.geometry_units, mmic_parmed.units["length"]
             )
 
         if inputs.velocities is not None:
@@ -74,19 +81,20 @@ class MolToMdaComponent(TransComponent):
             convert(
                 mda_mol.atoms.velocities,
                 inputs.velocities_units,
-                mmic_mda.units["speed"],
+                mmic_parmed.units["speed"],
             )
 
         if inputs.forces is not None:
             mda_mol.atoms.positions = inputs.forces.reshape(natoms, 3)
-            convert(mda_mol.atoms.forces, inputs.forces_units, mmic_mda.units["force"])
+            convert(mda_mol.atoms.forces, inputs.forces_units, mmic_parmed.units["force"])
 
         if inputs.connectivity:
             bonds = [(bond[0], bond[1]) for bond in inputs.connectivity]
             mda_mol.add_TopologyAttr("bonds", bonds)
             # How to load bond order?
 
-        return True, MdaMol(data=mda_mol, units=mmic_mda.units)
+        print(mda_mol.atoms.residues)
+        return True, MdaMol(data=mda_mol, units=mmic_parmed.units)
 
 
 class MdaToMolComponent(TransComponent):
@@ -108,8 +116,6 @@ class MdaToMolComponent(TransComponent):
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Tuple[bool, Mol]:
-
-        orient, validate, kwargs = False, None, None
 
         # get all properties + more from Universe?
         uni = inputs.data
@@ -142,7 +148,10 @@ class MdaToMolComponent(TransComponent):
             "names": names,
         }
 
-        if kwargs:
-            input_dict.update(kwargs)
+        return True, Mol(**input_dict)
 
-        return True, Mol(orient=orient, validate=validate, **input_dict)
+def fast_set(seq: List) -> List:
+    """ Removes duplicate entries in a list while preserving the order. """
+    seen = set()
+    seen_add = seen.add
+    return [x for x in seq if not (x in seen or seen_add(x))]

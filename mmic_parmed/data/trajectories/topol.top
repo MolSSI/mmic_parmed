@@ -11,7 +11,7 @@
 ;	
 ;	Executable:   /usr/bin/gmx
 ;	Data prefix:  /usr
-;	Working dir:  /mnt/c/Users/levnon/Desktop/Projects/mmic_mda/mmic_mda/data
+;	Working dir:  /mnt/c/Users/levnon/Desktop/Projects/mmic_parmed/mmic_parmed/data
 ;	Command line:
 ;	  gmx pdb2gmx -f 1dzl_fixed.pdb -ff amber99 -water none -ignh
 ;	Force field was read from the standard GROMACS share directory.
