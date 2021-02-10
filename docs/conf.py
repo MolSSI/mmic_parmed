@@ -144,7 +144,13 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "mmic_parmed.tex", "mmic_parmed Documentation", "mmic_parmed", "manual"),
+    (
+        master_doc,
+        "mmic_parmed.tex",
+        "mmic_parmed Documentation",
+        "mmic_parmed",
+        "manual",
+    ),
 ]
 
 
