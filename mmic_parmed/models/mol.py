@@ -5,36 +5,36 @@ from mmelemental.models.molecule.mm_mol import Mol
 from mmelemental.util.decorators import require
 
 
-__all__ = ["MdaMol"]
+__all__ = ["ParmedMol"]
 
 
-class MdaMol(ToolkitModel):
-    """ A model for MDAnalysis.Universe storing an MM molecule. """
+class ParmedMol(ToolkitModel):
+    """ A model for ParmEd.Universe storing an MM molecule. """
 
     @property
-    @require("MDAnalysis")
+    @require("parmed")
     def dtype(self):
         """ Returns the fundamental molecule object type. """
-        from MDAnalysis import Universe
+        from parmed.structure import Structure
 
-        return Universe
+        return Structure
 
     @validator("data")
     def valid_mol(cls, data):
-        """ Makes sure the Universe object stores atoms. """
+        """ Makes sure the Structure object stores atoms. """
         if hasattr(data, "atoms"):
             if len(data.atoms):
                 return data
 
-        raise ValueError("MDAnalysis object does not contain any atoms!")
+        raise ValueError("ParmEd molecule object does not contain any atoms!")
 
     @classmethod
-    @require("MDAnalysis")
+    @require("parmed")
     def from_file(
         cls, filename: str = None, top_filename: str = None, dtype: str = None, **kwargs
-    ) -> "MdaMol":
+    ) -> "ParmedMol":
         """
-        Constructs an MdaMol object from file(s).
+        Constructs an ParmedMol object from file(s).
 
         Parameters
         ----------
@@ -43,25 +43,25 @@ class MdaMol(ToolkitModel):
         top_filename: str, optional
             The topology filename to read
         dtype: str, optional
-            The type of file to interpret. If unset, MDAnalysis attempts to discover dtype from the file extension.
+            The type of file to interpret. If unset, ParmEd attempts to discover dtype from the file extension.
         **kwargs
             Any additional keywords to pass to the constructor
         Returns
         -------
-        MdaMol
-            A constructed MdaMol class.
+        ParmedMol
+            A constructed ParmedMol class.
         """
-        import MDAnalysis
+        import parmed
 
         if dtype:
-            kwargs["format"] = dtype
+            raise ValueError(f"This argument is not supported: dtype = {dtype}.")
 
         if filename and top_filename:
-            mol = MDAnalysis.Universe(top_filename, filename, **kwargs)
+            mol = parmed.load_file(filename=top_filename, xyz=filename, **kwargs)
         elif filename:
-            mol = MDAnalysis.Universe(filename, **kwargs)
+            mol = parmed.load_file(filename, **kwargs)
         elif top_filename:
-            mol = MDAnalysis.Universe(top_filename, **kwargs)
+            mol = parmed.load_file(top_filename, **kwargs)
         else:
             raise TypeError(
                 "You must supply at least one of the following: filename or top_filename."
@@ -75,9 +75,9 @@ class MdaMol(ToolkitModel):
         data: Mol,
         version: Optional[str] = None,
         **kwargs: Dict[str, Any],
-    ) -> "MdaMol":
+    ) -> "ParmedMol":
         """
-        Constructs an MdaMol object from an MMSchema Mol object.
+        Constructs an ParmedMol object from an MMSchema Mol object.
         Parameters
         ----------
         data: Mol
@@ -85,15 +85,15 @@ class MdaMol(ToolkitModel):
         version: str, optional
             Schema version e.g. 1.0.1
         **kwargs
-            Additional kwargs to pass to the constructors. kwargs take precedence over data.
+            Additional kwargs to pass to the constructors.
         Returns
         -------
-        MdaMol
-            A constructed MdaMol class.
+        ParmedMol
+            A constructed ParmedMol class.
         """
-        from mmic_parmed.components.mol_component import MolToMdaComponent
+        from mmic_parmed.components.mol_component import MolToParmedComponent
 
-        return MolToMdaComponent.compute(data)
+        return MolToParmedComponent.compute(data)
 
     def to_file(self, filename: str, dtype: str = None, **kwargs):
         """Writes the molecule to a file.
@@ -103,10 +103,12 @@ class MdaMol(ToolkitModel):
             The filename to write to
         dtype : Optional[str], optional
             File format
+        **kwargs
+            Additional kwargs to pass to the constructors.
         """
         if dtype:
-            kwargs["file_format"] = dtype
-        self.data.atoms.write(filename, **kwargs)
+            kwargs["format"] = dtype
+        self.data.save(filename, **kwargs)
 
     def to_schema(self, version: Optional[str] = None, **kwargs) -> Mol:
         """Converts the molecule to MMSchema molecule.
@@ -117,6 +119,6 @@ class MdaMol(ToolkitModel):
         **kwargs
             Additional kwargs to pass to the constructor.
         """
-        from mmic_parmed.components.mol_component import MdaToMolComponent
+        from mmic_parmed.components.mol_component import ParmedToMolComponent
 
-        return MdaToMolComponent.compute(self)
+        return ParmedToMolComponent.compute(self)
