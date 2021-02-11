@@ -14,6 +14,7 @@ import mmelemental as mm
 data_dir = os.path.join("mmic_parmed", "data")
 top_file = lambda ext: os.path.join(data_dir, "molecules", f"1dzl_fixed.{ext}")
 
+
 def pytest_generate_tests(metafunc):
     if "file" in metafunc.fixturenames:
         metafunc.parametrize("file", [top_file("pdb"), top_file("gro")])
