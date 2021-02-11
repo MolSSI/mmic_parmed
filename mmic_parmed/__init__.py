@@ -25,14 +25,17 @@ molread_ext_maps = {
 molwrite_ext_maps = {".gro": "gro", ".pdb": "pdb"}
 
 units = {
-    "length": "angstrom",
     "time": "ps",
     "energy": "kJ/mol",
     "charge": "e",
-    "speed": "angstrom/ps",
+    "speed": "angstrom/picosecond",
     "force": "kJ/(mol*angstrom)",
     "mass": "amu",
     "angle": "degrees",
 }
 
-_classes_map = {"Mol": models.MdaMol, "Traj": models.MdaTraj}
+_classes_map = {
+    "Mol": models.ParmedMol,
+    "Traj": models.ParmedTraj,
+    "ForceField": models.ParmedFF,
+}
