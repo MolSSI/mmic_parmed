@@ -1,16 +1,16 @@
 from mmelemental.components.trans.template_component import TransComponent
 from mmelemental.models.util.output import FileOutput
 from mmelemental.models.molecule.mm_mol import Mol
-from mmic_parmed.models import MdaMol
+from mmic_parmed.models import ParmedMol
 from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.decorators import require
 from mmelemental.util.units import convert
 
-__all__ = ["MolToMdaComponent", "MdaToMolComponent"]
+__all__ = ["MolToParmedComponent", "ParmedToMolComponent"]
 
 
-class MolToMdaComponent(TransComponent):
-    """ A component for converting Molecule to MDAnalysis molecule object. """
+class MolToParmedComponent(TransComponent):
+    """ A component for converting Molecule to ParmEd molecule object. """
 
     @classmethod
     def input(cls):
@@ -18,9 +18,9 @@ class MolToMdaComponent(TransComponent):
 
     @classmethod
     def output(cls):
-        return MdaMol
+        return ParmedMol
 
-    @require("MDAnalysis")
+    @require("parmed")
     def execute(
         self,
         inputs: Mol,
@@ -28,81 +28,91 @@ class MolToMdaComponent(TransComponent):
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, MdaMol]:
-
-        import MDAnalysis
+    ) -> Tuple[bool, ParmedMol]:
+        """
+        Works for writing PDB files e.g. pmol.save("file.pdb") but fails for gro files
+        TODO: need to investigate this more. Routine is also very slow. Try to vectorize.
+        """
+        import parmed
         import mmic_parmed
 
-        natoms = len(inputs.masses)
+        pmol = parmed.structure.Structure()
+        natoms = len(inputs.symbols)
 
-        if inputs.residues:
-            residues = list(fast_set(inputs.residues))
-            nres = len(residues)
-            resnames, _ = zip(*residues)
-            _, resids = zip(*inputs.residues)
-            resids = [i-1 for i in resids]
+        # Use dalton as the default unit for mass in ParmEd
+        units = {"mass": "dalton"}
+
+        if inputs.masses is not None:
+            masses = convert(inputs.masses, inputs.masses_units, units["mass"])
         else:
-            nres = 1
-            resnames, resids = "UNK", [1]
+            masses = [0] * natoms
 
-        # Must account for segments as well
-        segindices = None
+        for index, symb in enumerate(inputs.symbols):
 
-        mda_mol = MDAnalysis.Universe.empty(
-            natoms,
-            n_residues=nres,
-            atom_resindex=resids,
-            residue_segindex=segindices,
-            trajectory=True,
-        )
+            name = inputs.names[index]
+            # name = ToolkitMolecule.check_name(name)
 
-        mda_mol.add_TopologyAttr("type", inputs.symbols)
-        mda_mol.add_TopologyAttr("mass", inputs.masses)
-        convert(mda_mol.atoms.masses, inputs.masses_units, mmic_parmed.units["mass"])
+            atomic_number = inputs.atomic_numbers[index]
 
-        if inputs.names is not None:
-            mda_mol.add_TopologyAttr("name", inputs.names)
-
-        if inputs.residues is not None:
-            print("residues = ", resnames, resids)
-            mda_mol.add_TopologyAttr("resname", resnames)
-            #mda_mol.add_TopologyAttr("resid", resids)
-
-        # mda_mol.add_TopologyAttr('segid', ['SOL'])
-
-        if inputs.geometry is not None:
-            mda_mol.atoms.positions = inputs.geometry.reshape(natoms, 3)
-            convert(
-                mda_mol.atoms.positions, inputs.geometry_units, mmic_parmed.units["length"]
+            # Will likely lose FF-related info ... but then Molecule is not supposed to store any params specific to FFs
+            atom = parmed.topologyobjects.Atom(
+                list=None,
+                atomic_number=atomic_number,
+                name=name,
+                type=symb,
+                mass=masses[index],
+                nb_idx=0,
+                solvent_radius=0.0,
+                screen=0.0,
+                tree="BLA",
+                join=0.0,
+                irotat=0.0,
+                occupancy=1.0,
+                bfactor=0.0,
+                altloc="",
+                number=-1,
+                rmin=None,
+                epsilon=None,
+                rmin14=None,
+                epsilon14=None,
             )
 
+            if inputs.residues:
+                resname, resnum = inputs.residues[index]
+            else:
+                resname, resnum = "UNK", 0
+            # classparmed.Residue(name, number=- 1, chain='', insertion_code='', segid='', list=None)[source]
+            pmol.add_atom(atom, resname, resnum + 1, chain="", inscode="", segid="")
+
+        if inputs.geometry is not None:
+            pmol.coordinates = inputs.geometry.reshape(natoms, 3)
+            pmol.coordinates = convert(
+                pmol.coordinates, inputs.geometry_units, pmol.positions.unit.get_name()
+            )
+            units["length"] = pmol.positions.unit.get_name()
+
         if inputs.velocities is not None:
-            mda_mol.atoms.velocities = inputs.velocities.reshape(natoms, 3)
-            convert(
-                mda_mol.atoms.velocities,
+            pmol.velocities = inputs.velocities.reshape(natoms, 3)
+            pmol.velocities = convert(
+                pmol.velocities,
                 inputs.velocities_units,
                 mmic_parmed.units["speed"],
             )
-
-        if inputs.forces is not None:
-            mda_mol.atoms.positions = inputs.forces.reshape(natoms, 3)
-            convert(mda_mol.atoms.forces, inputs.forces_units, mmic_parmed.units["force"])
+            units["speed"] = mmic_parmed.units["speed"]
 
         if inputs.connectivity:
-            bonds = [(bond[0], bond[1]) for bond in inputs.connectivity]
-            mda_mol.add_TopologyAttr("bonds", bonds)
-            # How to load bond order?
+            for i, j, btype in inputs.connectivity:
+                pmol.atoms[i].bond_to(pmol.atoms[j])
 
-        print(mda_mol.atoms.residues)
-        return True, MdaMol(data=mda_mol, units=mmic_parmed.units)
+        return True, ParmedMol(data=pmol, units=units)
 
 
-class MdaToMolComponent(TransComponent):
-    """ A component for converting MDAnalysis molecule to Molecule object. """
+class ParmedToMolComponent(TransComponent):
+    """ A component for converting ParmEd molecule to Molecule object. """
 
     @classmethod
     def input(cls):
-        return MdaMol
+        return ParmedMol
 
     @classmethod
     def output(cls):
@@ -110,45 +120,58 @@ class MdaToMolComponent(TransComponent):
 
     def execute(
         self,
-        inputs: MdaMol,
+        inputs: ParmedMol,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
     ) -> Tuple[bool, Mol]:
 
-        # get all properties + more from Universe?
-        uni = inputs.data
-        geo = TransComponent.get(uni.atoms, "positions")
-        vel = TransComponent.get(uni.atoms, "velocities")
-        forces = TransComponent.get(uni.atoms, "forces")
-        symbs = TransComponent.get(uni.atoms, "types")
-        names = TransComponent.get(uni.atoms, "names")
-        masses = TransComponent.get(uni.atoms, "masses")
+        import mmic_parmed
+
+        # I think parmed.Structure does not store forces
+        pmol = inputs.data
+
+        geo = TransComponent.get(pmol, "coordinates")
+        geo_units = pmol.positions.unit.get_name() if geo is not None else None
+
+        vel = TransComponent.get(pmol, "velocities")
+        vel_units = mmic_parmed.units["speed"] if vel is not None else None
+
+        atomic_nums = [atom.atomic_number for atom in pmol.atoms]
+        names = [atom.name for atom in pmol.atoms]
+
+        masses = [atom.mass for atom in pmol.atoms]
+        masses_units = pmol.atoms[0].umass.unit.get_name()
 
         # If bond order is none, set it to 1.
-        if hasattr(uni.atoms, "bonds"):
+        if hasattr(pmol, "bonds"):
             connectivity = [
-                (bond.indices[0], bond.indices[1], bond.order or 1)
-                for bond in uni.atoms.bonds
+                (bond.atom1.idx, bond.atom2.idx, bond.order or 1) for bond in pmol.bonds
             ]
         else:
             connectivity = None
 
-        residues = [(atom.resname, atom.resnum) for atom in uni.atoms]
+        if hasattr(pmol, "residues"):
+            residues = [
+                (atom.residue.name, atom.residue.idx + 1) for atom in pmol.atoms
+            ]
 
         input_dict = {
-            "symbols": symbs,
+            "atomic_numbers": atomic_nums,
             "geometry": geo,
+            "geometry_units": geo_units,
             "velocities": vel,
-            "forces": forces,
+            "velocities_units": vel_units,
             "residues": residues,
             "connectivity": connectivity,
             "masses": masses,
+            "masses_units": masses_units,
             "names": names,
         }
 
         return True, Mol(**input_dict)
+
 
 def fast_set(seq: List) -> List:
     """ Removes duplicate entries in a list while preserving the order. """
