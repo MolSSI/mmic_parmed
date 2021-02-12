@@ -1,7 +1,7 @@
 from pydantic import Field, validator
 from typing import Dict, Any, Optional
 from mmelemental.models.base import ToolkitModel
-from mmelemental.models.molecule.mm_mol import Mol
+from mmelemental.models.molecule import Molecule
 from mmelemental.util.decorators import require
 
 
@@ -31,7 +31,7 @@ class ParmedMol(ToolkitModel):
     @classmethod
     @require("parmed")
     def from_file(
-        cls, filename: str = None, top_filename: str = None, dtype: str = None, **kwargs
+        cls, filename: str = None, top_filename: str = None, **kwargs
     ) -> "ParmedMol":
         """
         Constructs an ParmedMol object from file(s).
@@ -42,8 +42,6 @@ class ParmedMol(ToolkitModel):
             The atomic positions filename to read
         top_filename: str, optional
             The topology filename to read
-        dtype: str, optional
-            The type of file to interpret. If unset, ParmEd attempts to discover dtype from the file extension.
         **kwargs
             Any additional keywords to pass to the constructor
         Returns
@@ -53,8 +51,9 @@ class ParmedMol(ToolkitModel):
         """
         import parmed
 
-        if dtype:
-            raise ValueError(f"This argument is not supported: dtype = {dtype}.")
+        kwargs.pop(
+            "dtype", None
+        )  # load_file doesn't seem to support specifying file formats
 
         if filename and top_filename:
             mol = parmed.load_file(filename=top_filename, xyz=filename, **kwargs)
@@ -72,15 +71,15 @@ class ParmedMol(ToolkitModel):
     @classmethod
     def from_schema(
         cls,
-        data: Mol,
+        data: Molecule,
         version: Optional[str] = None,
         **kwargs: Dict[str, Any],
     ) -> "ParmedMol":
         """
-        Constructs an ParmedMol object from an MMSchema Mol object.
+        Constructs an ParmedMol object from an MMSchema Molecule object.
         Parameters
         ----------
-        data: Mol
+        data: Molecule
             Data to construct Molecule from.
         version: str, optional
             Schema version e.g. 1.0.1
@@ -110,7 +109,7 @@ class ParmedMol(ToolkitModel):
             kwargs["format"] = dtype
         self.data.save(filename, **kwargs)
 
-    def to_schema(self, version: Optional[str] = None, **kwargs) -> Mol:
+    def to_schema(self, version: Optional[str] = None, **kwargs) -> Molecule:
         """Converts the molecule to MMSchema molecule.
         Parameters
         ----------
