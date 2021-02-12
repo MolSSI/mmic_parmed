@@ -32,7 +32,7 @@ def test_mda_to_mol(file):
 
 
 def test_mol_to_mda(file):
-    mm_mol = mm.models.molecule.mm_mol.Mol.from_file(file)
+    mm_mol = mm.models.molecule.mm_mol.Molecule.from_file(file)
     return mmic_parmed.components.MolToParmedComponent.compute(mm_mol)
 
 
@@ -41,4 +41,4 @@ def test_io_methods(file):
     assert isinstance(pmol.data, pmol.dtype)
 
     mmol = pmol.to_schema()
-    assert isinstance(mmol, mm.models.molecule.Mol)
+    assert isinstance(mmol, mm.models.molecule.Molecule)
