@@ -17,12 +17,17 @@ del get_versions, versions
 # Need to update these lists
 molread_ext_maps = {
     ".gro": "gro",
+    ".psf": "psf",
     ".pdb": "pdb",
     ".top": "top",
-    ".psf": "psf",
+    ".sdf": "sdf",
+    ".mol": "mol",
+    ".mol2": "mol2",
 }
 
 molwrite_ext_maps = {".gro": "gro", ".pdb": "pdb"}
+
+ffread_ext_maps = {".psf": "psf", ".top": "top", ".prm": "prm"}
 
 units = {
     "time": "ps",
@@ -35,7 +40,7 @@ units = {
 }
 
 _classes_map = {
-    "Mol": models.ParmedMol,
-    "Traj": models.ParmedTraj,
+    "Molecule": models.ParmedMol,
+    "Trajectory": models.ParmedTraj,
     "ForceField": models.ParmedFF,
 }
