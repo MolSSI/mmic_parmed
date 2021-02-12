@@ -1,6 +1,6 @@
 from mmelemental.components.trans.template_component import TransComponent
 from mmelemental.models.util.output import FileOutput
-from mmelemental.models.molecule.mm_mol import Mol
+from mmelemental.models.molecule import Molecule
 from mmic_parmed.models import ParmedMol
 from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.decorators import require
@@ -14,7 +14,7 @@ class MolToParmedComponent(TransComponent):
 
     @classmethod
     def input(cls):
-        return Mol
+        return Molecule
 
     @classmethod
     def output(cls):
@@ -23,7 +23,7 @@ class MolToParmedComponent(TransComponent):
     @require("parmed")
     def execute(
         self,
-        inputs: Mol,
+        inputs: Molecule,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
@@ -116,7 +116,7 @@ class ParmedToMolComponent(TransComponent):
 
     @classmethod
     def output(cls):
-        return Mol
+        return Molecule
 
     def execute(
         self,
@@ -125,7 +125,7 @@ class ParmedToMolComponent(TransComponent):
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, Mol]:
+    ) -> Tuple[bool, Molecule]:
 
         import mmic_parmed
 
@@ -170,11 +170,4 @@ class ParmedToMolComponent(TransComponent):
             "names": names,
         }
 
-        return True, Mol(**input_dict)
-
-
-def fast_set(seq: List) -> List:
-    """ Removes duplicate entries in a list while preserving the order. """
-    seen = set()
-    seen_add = seen.add
-    return [x for x in seq if not (x in seen or seen_add(x))]
+        return True, Molecule(**input_dict)
