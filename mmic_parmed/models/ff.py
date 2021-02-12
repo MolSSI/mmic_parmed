@@ -1,7 +1,7 @@
 from pydantic import Field, validator
 from typing import Dict, Any, Optional
 from mmelemental.models.base import ToolkitModel
-from mmelemental.models.molecule.mm_ff import ForceField
+from mmelemental.models.forcefield.mm_ff import ForceField
 from mmelemental.util.decorators import require
 
 
@@ -26,77 +26,62 @@ class ParmedFF(ToolkitModel):
             if len(data.atoms):
                 return data
 
-        raise ValueError("ParmEd molecule object does not contain any atoms!")
+        raise ValueError("ParmEd forcefield object does not contain any atoms!")
 
     @classmethod
     @require("parmed")
-    def from_file(
-        cls, filename: str = None, top_filename: str = None, dtype: str = None, **kwargs
-    ) -> "ParmedFF":
+    def from_file(cls, filename: str, **kwargs) -> "ParmedFF":
         """
-        Constructs an ParmedMol object from file(s).
+        Constructs an ParmedFF object from file(s).
 
         Parameters
         ----------
-        filename : str, optional
-            The atomic positions filename to read
-        top_filename: str, optional
-            The topology filename to read
-        dtype: str, optional
-            The type of file to interpret. If unset, ParmEd attempts to discover dtype from the file extension.
+        filename : str
+            The forcefield filename to read
         **kwargs
             Any additional keywords to pass to the constructor
         Returns
         -------
-        ParmedMol
-            A constructed ParmedMol class.
+        ParmedFF
+            A constructed ParmedFF object.
         """
         import parmed
 
-        if dtype:
-            raise ValueError(f"This argument is not supported: dtype = {dtype}.")
+        kwargs.pop(
+            "dtype", None
+        )  # load_file doesn't seem to support specifying file formats
+        ff = parmed.load_file(filename=filename, **kwargs)
 
-        if filename and top_filename:
-            mol = parmed.load_file(filename=top_filename, xyz=filename, **kwargs)
-        elif filename:
-            mol = parmed.load_file(filename, **kwargs)
-        elif top_filename:
-            mol = parmed.load_file(top_filename, **kwargs)
-        else:
-            raise TypeError(
-                "You must supply at least one of the following: filename or top_filename."
-            )
-
-        return cls(data=mol)
+        return cls(data=ff)
 
     @classmethod
     def from_schema(
         cls,
-        data: Mol,
+        data: ForceField,
         version: Optional[str] = None,
         **kwargs: Dict[str, Any],
-    ) -> "ParmedMol":
+    ) -> "ParmedFF":
         """
-        Constructs an ParmedMol object from an MMSchema Mol object.
+        Constructs an ParmedFF object from an MMSchema ForceField object.
         Parameters
         ----------
-        data: Mol
-            Data to construct Molecule from.
+        data: ForceField
+            Data to construct the forcefield object from.
         version: str, optional
             Schema version e.g. 1.0.1
         **kwargs
             Additional kwargs to pass to the constructors.
         Returns
         -------
-        ParmedMol
-            A constructed ParmedMol class.
+        ParmedFF
+            A constructed ParmedFF object.
         """
-        from mmic_parmed.components.mol_component import MolToParmedComponent
+        from mmic_parmed.components.ff_component import FFToParmedComponent
 
-        return MolToParmedComponent.compute(data)
+        return FFToParmedComponent.compute(data)
 
     def to_file(self, filename: str, dtype: str = None, **kwargs):
-        """Writes the molecule to a file.
+        """Writes the forcefield to a file.
         Parameters
         ----------
         filename : str
@@ -110,7 +95,7 @@ class ParmedFF(ToolkitModel):
             kwargs["format"] = dtype
         self.data.save(filename, **kwargs)
 
-    def to_schema(self, version: Optional[str] = None, **kwargs) -> Mol:
+    def to_schema(self, version: Optional[str] = None, **kwargs) -> ForceField:
         """Converts the molecule to MMSchema molecule.
         Parameters
         ----------
@@ -119,6 +104,6 @@ class ParmedFF(ToolkitModel):
         **kwargs
             Additional kwargs to pass to the constructor.
         """
-        from mmic_parmed.components.mol_component import ParmedToMolComponent
+        from mmic_parmed.components.ff_component import ParmedToFFComponent
 
-        return ParmedToMolComponent.compute(self)
+        return ParmedToFFComponent.compute(self)
