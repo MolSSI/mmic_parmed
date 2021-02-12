@@ -20,7 +20,7 @@ from mmic_parmed.models import ParmedMol
 pa_mol = ParmedMol.from_schema(mm_mol) -> parmed.structure.Structure
 
 # Convert ParmEd to MMSchema molecule
-mm_mol = ParmedMol.to_schema(pa_mol) -> mmelemental.models.molecule.Mol
+mm_mol = ParmedMol.to_schema(pa_mol) -> mmelemental.models.molecule.Molecule
 
 ```
 # Under the hood
@@ -30,13 +30,13 @@ The `from_schema` and `to_schema` methods in the `ParmedMol` model use translati
 ```python
 from mmic_parmed.components import ParmedToMolComponent, MolToParmedComponent
 from mmic_parmed.models.import ParmedMol
-from mmelemental.models.molecule import Mol
+from mmelemental.models.molecule import Molecule
 ```
 
 ### MMSchema to ParmEd molecule
 ```python
 # Creating MMSchema molecule
-mm_mol = Mol.from_file(path_to_file)
+mm_mol = Molecule.from_file(path_to_file)
 
 # Running translator compute
 pa_mol = MolToParmedComponent.compute(mm_mol)
