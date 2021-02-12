@@ -1,115 +1,123 @@
 from pydantic import Field, validator
 from typing import Dict, Any, Optional
 from mmelemental.models.base import ToolkitModel
-from mmelemental.models.molecule import Mol
-from mmelemental.models.trajectory import Traj
+from mmelemental.models.molecule import Molecule
 from mmelemental.util.decorators import require
 
 
-__all__ = ["MdaTraj"]
+__all__ = ["ParmedTraj"]
 
 
-class MdaTraj(ToolkitModel):
-    """ A model for MDAnalysis.Universe storing an MM trajectory. """
+class ParmedTraj(ToolkitModel):
+    """ A model for ParmEd.Universe storing an MM molecule. """
 
     @property
-    @require("MDAnalysis")
+    @require("parmed")
     def dtype(self):
         """ Returns the fundamental molecule object type. """
-        from MDAnalysis import Universe
+        from parmed.structure import Structure
 
-        return Universe
+        return Structure
 
     @validator("data")
-    def valid_traj(cls, data):
-        """ Makes sure the Universe object stores atoms and a trajectory. """
-        if not hasattr(data, "atoms"):
-            raise ValueError("MDAnalysis object does not contain any atoms!")
-        elif hasattr(data, "trajectory"):
-            return data
+    def valid_mol(cls, data):
+        """ Makes sure the Structure object stores atoms. """
+        if hasattr(data, "atoms"):
+            if len(data.atoms):
+                return data
 
-        raise ValueError("MDAnalysis object does not contain any trajectories!")
+        raise ValueError("ParmEd molecule object does not contain any atoms!")
 
     @classmethod
-    @require("MDAnalysis")
+    @require("parmed")
     def from_file(
-        cls, filename: str, top_filename: str = None, dtype: str = None, **kwargs
-    ) -> "MdaTraj":
+        cls, filename: str = None, top_filename: str = None, **kwargs
+    ) -> "ParmedMol":
         """
-        Constructs an instance of MdaMol object from file(s).
+        Constructs an ParmedMol object from file(s).
 
         Parameters
         ----------
         filename : str, optional
-            The trajectory filename to read
+            The atomic positions filename to read
         top_filename: str, optional
             The topology filename to read
-        dtype: str, optional
-            The type of file to interpret. If unset, MDAnalysis attempts to discover dtype from the file extension.
         **kwargs
             Any additional keywords to pass to the constructor
         Returns
         -------
-        Mol
-            A constructed Mol class.
+        ParmedMol
+            A constructed ParmedMol class.
         """
-        import MDAnalysis
+        import parmed
 
-        if dtype:
-            kwargs["format"] = dtype
+        kwargs.pop(
+            "dtype", None
+        )  # load_file doesn't seem to support specifying file formats
 
         if filename and top_filename:
-            mol = MDAnalysis.Universe(top_filename, filename, **kwargs)
+            mol = parmed.load_file(filename=top_filename, xyz=filename, **kwargs)
+        elif filename:
+            mol = parmed.load_file(filename, **kwargs)
+        elif top_filename:
+            mol = parmed.load_file(top_filename, **kwargs)
         else:
-            mol = MDAnalysis.Universe(filename, **kwargs)
+            raise TypeError(
+                "You must supply at least one of the following: filename or top_filename."
+            )
 
         return cls(data=mol)
 
     @classmethod
     def from_schema(
         cls,
-        data: Traj,
+        data: Molecule,
         version: Optional[str] = None,
         **kwargs: Dict[str, Any],
-    ) -> "Mol":
+    ) -> "ParmedMol":
         """
-        Constructs a Mol object from an MMSchema molecule object.
+        Constructs an ParmedMol object from an MMSchema Molecule object.
         Parameters
         ----------
-        data: Mol
+        data: Molecule
             Data to construct Molecule from.
         version: str, optional
             Schema version e.g. 1.0.1
         **kwargs
-            Additional kwargs to pass to the constructors. kwargs take precedence over data.
+            Additional kwargs to pass to the constructors.
         Returns
         -------
-        Mol
-            A constructed Mol class.
+        ParmedMol
+            A constructed ParmedMol class.
         """
-        from mmic_parmed.components.mol_component import MolToMdaComponent
+        from mmic_parmed.components.mol_component import MolToParmedComponent
 
-        return MolToMdaComponent.compute(data)
+        return MolToParmedComponent.compute(data)
 
-    def to_file(self, filename: str, **kwargs):
+    def to_file(self, filename: str, dtype: str = None, **kwargs):
         """Writes the molecule to a file.
         Parameters
         ----------
         filename : str
             The filename to write to
         dtype : Optional[str], optional
+            File format
+        **kwargs
+            Additional kwargs to pass to the constructors.
         """
-        self.data.atoms.write(filename, **kwargs)
+        if dtype:
+            kwargs["format"] = dtype
+        self.data.save(filename, **kwargs)
 
-    def to_schema(self, version: Optional[str] = None, **kwargs) -> Mol:
+    def to_schema(self, version: Optional[str] = None, **kwargs) -> Molecule:
         """Converts the molecule to MMSchema molecule.
         Parameters
         ----------
         version: str, optional
-            Schema version e.g. 1.0.1
+            Schema specification version to comply with e.g. 1.0.1.
         **kwargs
             Additional kwargs to pass to the constructor.
         """
-        from mmic_parmed.components.mol_component import MdaToMolComponent
+        from mmic_parmed.components.mol_component import ParmedToMolComponent
 
-        return MdaToMolComponent.compute(self)
+        return ParmedToMolComponent.compute(self)
