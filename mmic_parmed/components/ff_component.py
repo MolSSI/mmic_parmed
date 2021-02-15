@@ -128,40 +128,92 @@ class ParmedToFFComponent(TransComponent):
     ) -> Tuple[bool, ForceField]:
 
         ff = inputs.data
+        atom = ff.atoms[0]
+        bond = ff.bonds[0] if len(ff.bonds) else None
+        angle = ff.angles[0] if len(ff.angles) else None
+        dihedral = ff.dihedrals[0] if len(ff.dihedrals) else None
 
         data = [(atom.name, atom.charge) for atom in ff.atoms]
         names, charges = zip(*data)
+        charges = convert(
+            charges, atom.ucharge.unit.get_symbol(), mmic_parmed.units["charge"]
+        )
+
+        rmin_unit = atom.urmin.unit.get_name()
+        rmin_14_factor = convert(
+            1.0, atom.urmin_14.unit.get_name(), mmic_parmed.units["length"]
+        )
+        uepsilon_factor = convert(
+            1.0, atom.uepsilon.unit.get_name(), mmic_parmed.units["energy"]
+        )
+        epsilon_14_factor = convert(
+            1.0, atom.uepsilon_14.unit.get_name(), mmic_parmed.units["energy"]
+        )
         params = [
-            (atom.rmin, atom.rmin_14, atom.epsilon, atom.epsilon_14)
+            (
+                atom.rmin * rmin_factor,
+                atom.rmin_14 * rmin_14_factor,
+                atom.epsilon * uepsilon_factor,
+                atom.epsilon_14 * epsilon_14_factor,
+            )
             for atom in ff.atoms
         ]
 
-        bonds = [(bond.type.req, bond.type.k) for bond in ff.bonds]
-        bonds_type = [bond.funct for bond in ff.bonds]
-
-        angles = [(angle.type.theteq, angle.type.k) for angle in ff.angles]
-        angles_type = [angle.funct for angle in ff.angles]
-
-        # Why the hell does parmed interpret dihedral.type as a list sometimes? See dialanine.top, last 8 dihedral entries. WEIRD!
-        dihedrals = [
-            (
-                dihedral.type[0].phase,
-                dihedral.type[0].phi_k,
-                dihedral.type[0].per,
-                dihedral.type[0].scee,
-                dihedral.type[0].scnb,
+        if bond:
+            bond_req_factor = convert(
+                1.0, bond.type.ureq.unit.get_name(), mmic_parmed.units["length"]
             )
-            if isinstance(dihedral.type, list)
-            else (
-                dihedral.type.phase,
-                dihedral.type.phi_k,
-                dihedral.type.per,
-                dihedral.type.scee,
-                dihedral.type.scnb,
+            bond_k_factor = convert(
+                1.0, bond.type.uk.unit.get_name(), mmic_parmed.units["energy"]
             )
-            for dihedral in ff.dihedrals
-        ]
-        dihedrals_type = [dihedral.funct for dihedral in ff.dihedrals]
+            bonds = [
+                (bond.type.req * bond_req_factor, bond.type.k * bond_k_factor)
+                for bond in ff.bonds
+            ]
+            bonds_type = [bond.funct for bond in ff.bonds]
+
+        if angle:
+            angle_theta_factor = convert(
+                1.0, angle.type.utheteq.unit.get_name(), mmic_parmed.units["angle"]
+            )
+            angle_k_factor = convert(
+                1.0, angle.type.uk.unit.get_name(), mmic_parmed.units["energy"]
+            )
+            angles = [(angle.type.theteq, angle.type.k) for angle in ff.angles]
+            angles_type = [angle.funct for angle in ff.angles]
+
+        if dihedral:
+            # Why the hell does parmed interpret dihedral.type as a list sometimes? See dialanine.top, last 8 dihedral entries. WEIRD!
+            # This is a hack around this
+            dtype = dihedral.type[0] if isinstance(dihedral.type, list) else dihedral.type
+
+            dihedral_phi_factor = convert(
+                1.0, dtype.uphi_k.unit.get_name(), mmic_parmed.units["energy"]
+            )
+            dihedral_phase_factor = convert(
+                1.0, dtype.uphase.unit.get_name(), mmic_parmed.units["degree"]
+            )
+
+            # Need to look into per, scee, and scnb ... their meaning, units, etc.
+            dihedrals = [
+                (
+                    dihedral.type[0].phase * dihedral_phase_factor ,
+                    dihedral.type[0].phi_k * dihedral_phi_factor,
+                    dihedral.type[0].per,
+                    dihedral.type[0].scee,
+                    dihedral.type[0].scnb,
+                )
+                if isinstance(dihedral.type, list)
+                else (
+                    dihedral.type.phase * dihedral_phase_factor,
+                    dihedral.type.phi_k * dihedral_phi_factor,
+                    dihedral.type.per,
+                    dihedral.type.scee,
+                    dihedral.type.scnb,
+                )
+                for dihedral in ff.dihedrals
+            ]
+            dihedrals_type = [dihedral.funct for dihedral in ff.dihedrals]
 
         improper_dihedrals = None
         charge_groups = None
