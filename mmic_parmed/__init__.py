@@ -29,16 +29,6 @@ molwrite_ext_maps = {".gro": "gro", ".pdb": "pdb"}
 
 ffread_ext_maps = {".psf": "psf", ".top": "top", ".prm": "prm"}
 
-units = {
-    "time": "ps",
-    "energy": "kJ/mol",
-    "charge": "e",
-    "speed": "angstrom/picosecond",
-    "force": "kJ/(mol*angstrom)",
-    "mass": "amu",
-    "angle": "degrees",
-}
-
 _classes_map = {
     "Molecule": models.ParmedMol,
     "Trajectory": models.ParmedTraj,
