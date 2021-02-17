@@ -150,7 +150,7 @@ latex_documents = [
         "mmic_parmed Documentation",
         "mmic_parmed",
         "manual",
-    ),
+    )
 ]
 
 
@@ -175,7 +175,7 @@ texinfo_documents = [
         "mmic_parmed",
         "A short description of the project.",
         "Miscellaneous",
-    ),
+    )
 ]
 
 
