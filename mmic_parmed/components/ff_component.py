@@ -132,7 +132,9 @@ class ParmedToFFComponent(TransComponent):
     ) -> Tuple[bool, ForceField]:
 
         ff = inputs.data
-        mm_ff = ForceField(nonbonded=[], bonds=[], angles=[])  # empty FF object, provides units
+        mm_ff = ForceField(
+            nonbonded=[], bonds=[], angles=[]
+        )  # empty FF object, provides units
         atom = ff.atoms[0]
         bond = ff.bonds[0] if len(ff.bonds) else None
         angle = ff.angles[0] if len(ff.angles) else None
@@ -154,7 +156,7 @@ class ParmedToFFComponent(TransComponent):
         epsilon_14_factor = convert(
             1.0, atom.uepsilon_14.unit.get_name(), mm_ff.nonbonded.epsilon_units
         )
-        scaling_factor = 1.0 / 2 ** (1.0 / 6.0) # rmin = 2^(1/6) sigma
+        scaling_factor = 1.0 / 2 ** (1.0 / 6.0)  # rmin = 2^(1/6) sigma
         params = [
             (
                 atom.rmin * rmin_factor * scaling_factor,
@@ -165,7 +167,7 @@ class ParmedToFFComponent(TransComponent):
             for atom in ff.atoms
         ]
         sigma, sigma_14, epsilon, epsilon_14 = zip(*params)
-        
+
         nonbonded = NonBonded(sigma=sigma, epsilon=epsilon, charges=charges, form="LJ")
 
         if bond:
@@ -179,7 +181,9 @@ class ParmedToFFComponent(TransComponent):
             bonds_k = [bond.type.k * bond_k_factor for bond in ff.bonds]
             bonds_type = [bond.funct for bond in ff.bonds]
 
-            bonds = Bonds(length=bonds_lengths, spring=bonds_k, form=str(bonds_type)) # need to work out the form
+            bonds = Bonds(
+                length=bonds_lengths, spring=bonds_k, form=str(bonds_type)
+            )  # need to work out the form
         else:
             bonds = None
 
@@ -194,7 +198,9 @@ class ParmedToFFComponent(TransComponent):
             angles_k = [angle.type.k for angle in ff.angles]
             angles_type = [angle.funct for angle in ff.angles]
 
-            angles = Angles(angle=angles_, spring=angles_k, form=str(angles_type)) # need to work out the form
+            angles = Angles(
+                angle=angles_, spring=angles_k, form=str(angles_type)
+            )  # need to work out the form
         else:
             angles = None
 
