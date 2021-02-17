@@ -1,6 +1,6 @@
 from mmelemental.components.trans.template_component import TransComponent
 from mmelemental.models.util.output import FileOutput
-from mmelemental.models.trajectory import Trajectory, Frame
+from mmelemental.models.collect import Trajectory, Frame
 from mmic_parmed.models import ParmedMol, ParmedTraj
 from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.decorators import require
@@ -19,7 +19,7 @@ class TrajToParmedComponent(TransComponent):
     def output(cls):
         return ParmedTraj
 
-    @require("ParmEd")
+    @require("parmed")
     def execute(
         self,
         inputs: Trajectory,
