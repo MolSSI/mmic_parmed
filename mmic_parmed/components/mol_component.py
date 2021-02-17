@@ -34,7 +34,6 @@ class MolToParmedComponent(TransComponent):
         TODO: need to investigate this more. Routine is also very slow. Try to vectorize.
         """
         import parmed
-        import mmic_parmed
 
         pmol = parmed.structure.Structure()
         natoms = len(inputs.symbols)
@@ -92,13 +91,11 @@ class MolToParmedComponent(TransComponent):
             units["length"] = pmol.positions.unit.get_name()
 
         if inputs.velocities is not None:
+            units["speed"] = "angstrom/picosecond"
             pmol.velocities = inputs.velocities.reshape(natoms, 3)
             pmol.velocities = convert(
-                pmol.velocities,
-                inputs.velocities_units,
-                mmic_parmed.units["speed"],
+                pmol.velocities, inputs.velocities_units, units["speed"]
             )
-            units["speed"] = mmic_parmed.units["speed"]
 
         if inputs.connectivity:
             for i, j, btype in inputs.connectivity:
@@ -127,8 +124,6 @@ class ParmedToMolComponent(TransComponent):
         timeout: Optional[int] = None,
     ) -> Tuple[bool, Molecule]:
 
-        import mmic_parmed
-
         # I think parmed.Structure does not store forces
         pmol = inputs.data
 
@@ -136,7 +131,7 @@ class ParmedToMolComponent(TransComponent):
         geo_units = pmol.positions.unit.get_name() if geo is not None else None
 
         vel = TransComponent.get(pmol, "velocities")
-        vel_units = mmic_parmed.units["speed"] if vel is not None else None
+        vel_units = "angstrom/picosecond" if vel is not None else None
 
         atomic_nums = [atom.atomic_number for atom in pmol.atoms]
         names = [atom.name for atom in pmol.atoms]
