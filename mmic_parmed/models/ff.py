@@ -56,10 +56,7 @@ class ParmedFF(ToolkitModel):
 
     @classmethod
     def from_schema(
-        cls,
-        data: ForceField,
-        version: Optional[str] = None,
-        **kwargs: Dict[str, Any],
+        cls, data: ForceField, version: Optional[str] = None, **kwargs: Dict[str, Any]
     ) -> "ParmedFF":
         """
         Constructs an ParmedFF object from an MMSchema ForceField object.
