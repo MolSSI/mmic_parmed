@@ -1,6 +1,12 @@
 from mmelemental.components.trans import TransComponent
 from mmelemental.models.util.output import FileOutput
-from mmelemental.models.forcefield.mm_ff import ForceField
+from mmelemental.models.forcefield.mm_ff import (
+    ForceField,
+    Bonds,
+    Angles,
+    Dihedrals,
+    NonBonded,
+)
 from mmic_parmed.models import ParmedFF
 from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.decorators import require
@@ -94,9 +100,7 @@ class FFToParmedComponent(TransComponent):
         if inputs.velocities is not None:
             pmol.velocities = inputs.velocities.reshape(natoms, 3)
             pmol.velocities = convert(
-                pmol.velocities,
-                inputs.velocities_units,
-                mmic_parmed.units["speed"],
+                pmol.velocities, inputs.velocities_units, mmic_parmed.units["speed"]
             )
             units["speed"] = mmic_parmed.units["speed"]
 
@@ -128,6 +132,7 @@ class ParmedToFFComponent(TransComponent):
     ) -> Tuple[bool, ForceField]:
 
         ff = inputs.data
+        mm_ff = ForceField(nonbonded=[], bonds=[], angles=[])  # empty FF object, provides units
         atom = ff.atoms[0]
         bond = ff.bonds[0] if len(ff.bonds) else None
         angle = ff.angles[0] if len(ff.angles) else None
@@ -136,68 +141,81 @@ class ParmedToFFComponent(TransComponent):
         data = [(atom.name, atom.charge) for atom in ff.atoms]
         names, charges = zip(*data)
         charges = convert(
-            charges, atom.ucharge.unit.get_symbol(), mmic_parmed.units["charge"]
+            charges, atom.ucharge.unit.get_symbol(), mm_ff.nonbonded.charges_units
         )
 
-        rmin_unit = atom.urmin.unit.get_name()
+        rmin_factor = convert(1.0, atom.urmin.unit.get_name(), mm_ff.bonds.length_units)
         rmin_14_factor = convert(
-            1.0, atom.urmin_14.unit.get_name(), mmic_parmed.units["length"]
+            1.0, atom.urmin_14.unit.get_name(), mm_ff.nonbonded.sigma_units
         )
         uepsilon_factor = convert(
-            1.0, atom.uepsilon.unit.get_name(), mmic_parmed.units["energy"]
+            1.0, atom.uepsilon.unit.get_name(), mm_ff.nonbonded.epsilon_units
         )
         epsilon_14_factor = convert(
-            1.0, atom.uepsilon_14.unit.get_name(), mmic_parmed.units["energy"]
+            1.0, atom.uepsilon_14.unit.get_name(), mm_ff.nonbonded.epsilon_units
         )
+        scaling_factor = 1.0 / 2 ** (1.0 / 6.0) # rmin = 2^(1/6) sigma
         params = [
             (
-                atom.rmin * rmin_factor,
-                atom.rmin_14 * rmin_14_factor,
+                atom.rmin * rmin_factor * scaling_factor,
+                atom.rmin_14 * rmin_14_factor * scaling_factor,
                 atom.epsilon * uepsilon_factor,
                 atom.epsilon_14 * epsilon_14_factor,
             )
             for atom in ff.atoms
         ]
+        sigma, sigma_14, epsilon, epsilon_14 = zip(*params)
+        
+        nonbonded = NonBonded(sigma=sigma, epsilon=epsilon, charges=charges, form="LJ")
 
         if bond:
             bond_req_factor = convert(
-                1.0, bond.type.ureq.unit.get_name(), mmic_parmed.units["length"]
+                1.0, bond.type.ureq.unit.get_name(), mm_ff.bonds.length_units
             )
             bond_k_factor = convert(
-                1.0, bond.type.uk.unit.get_name(), mmic_parmed.units["energy"]
+                1.0, bond.type.uk.unit.get_name(), mm_ff.bonds.spring_units
             )
-            bonds = [
-                (bond.type.req * bond_req_factor, bond.type.k * bond_k_factor)
-                for bond in ff.bonds
-            ]
+            bonds_lengths = [bond.type.req * bond_req_factor for bond in ff.bonds]
+            bonds_k = [bond.type.k * bond_k_factor for bond in ff.bonds]
             bonds_type = [bond.funct for bond in ff.bonds]
+
+            bonds = Bonds(length=bonds_lengths, spring=bonds_k, form=str(bonds_type)) # need to work out the form
+        else:
+            bonds = None
 
         if angle:
             angle_theta_factor = convert(
-                1.0, angle.type.utheteq.unit.get_name(), mmic_parmed.units["angle"]
+                1.0, angle.type.utheteq.unit.get_name(), mm_ff.angles.angle_units
             )
             angle_k_factor = convert(
-                1.0, angle.type.uk.unit.get_name(), mmic_parmed.units["energy"]
+                1.0, angle.type.uk.unit.get_name(), mm_ff.angles.spring_units
             )
-            angles = [(angle.type.theteq, angle.type.k) for angle in ff.angles]
+            angles_ = [angle.type.theteq for angle in ff.angles]
+            angles_k = [angle.type.k for angle in ff.angles]
             angles_type = [angle.funct for angle in ff.angles]
 
-        if dihedral:
+            angles = Angles(angle=angles_, spring=angles_k, form=str(angles_type)) # need to work out the form
+        else:
+            angles = None
+
+        if False:  # dihedral:
             # Why the hell does parmed interpret dihedral.type as a list sometimes? See dialanine.top, last 8 dihedral entries. WEIRD!
             # This is a hack around this
-            dtype = dihedral.type[0] if isinstance(dihedral.type, list) else dihedral.type
+            dtype = (
+                dihedral.type[0] if isinstance(dihedral.type, list) else dihedral.type
+            )
 
             dihedral_phi_factor = convert(
-                1.0, dtype.uphi_k.unit.get_name(), mmic_parmed.units["energy"]
+                1.0, dtype.uphi_k.unit.get_name(), mm_ff.dihedrals.phi_units
             )
             dihedral_phase_factor = convert(
-                1.0, dtype.uphase.unit.get_name(), mmic_parmed.units["degree"]
+                1.0, dtype.uphase.unit.get_name(), mm_ff.dihedrals.phase_units
             )
 
             # Need to look into per, scee, and scnb ... their meaning, units, etc.
             dihedrals = [
                 (
-                    dihedral.type[0].phase * dihedral_phase_factor ,
+                    dihedral.type[0].phase * dihedral_phase_factor,
                     dihedral.type[0].phi_k * dihedral_phi_factor,
                     dihedral.type[0].per,
                     dihedral.type[0].scee,
@@ -215,7 +233,6 @@ class ParmedToFFComponent(TransComponent):
             ]
             dihedrals_type = [dihedral.funct for dihedral in ff.dihedrals]
 
-        improper_dihedrals = None
         charge_groups = None
         exclusions = ff.nrexcl
         inclusions = None
@@ -223,11 +240,9 @@ class ParmedToFFComponent(TransComponent):
         input_dict = {
             "bonds": bonds,
             "angles": angles,
-            "dihedrals": dihedrals,
-            "improper_dihedrals": improper_dihedrals,
-            "charges": charges,
-            "charge_groups": charge_groups,
-            "nonbonded": params,
+            "dihedrals": None,
+            "im_dihedrals": None,
+            "nonbonded": nonbonded,
             "exclusions": exclusions,
             "inclusions": inclusions,
             "types": names,
