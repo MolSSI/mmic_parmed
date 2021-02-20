@@ -19,8 +19,8 @@ class ParmedFF(ToolkitModel):
 
         return Structure
 
-    @validator("data")
-    def valid_mol(cls, data):
+    @classmethod
+    def isvalid(cls, data):
         """ Makes sure the Structure object stores atoms. """
         if hasattr(data, "atoms"):
             if len(data.atoms):
