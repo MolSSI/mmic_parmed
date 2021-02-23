@@ -19,7 +19,6 @@ molread_ext_maps = {
     ".gro": "gro",
     ".psf": "psf",
     ".pdb": "pdb",
-    ".top": "top",
     ".sdf": "sdf",
     ".mol": "mol",
     ".mol2": "mol2",
