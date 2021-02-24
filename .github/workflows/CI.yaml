@@ -43,6 +43,11 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Installing binary dependencies
+      shell: bash
+      run: |
+        sudo apt-get install gromacs
+
     - name: Testing Dependencies
       shell: bash
       run: |
