@@ -51,6 +51,8 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        git clone https://github.com/ParmEd/parmed
+        cd parmed && pip install . && cd .. && rm -rf parmed
         git clone https://github.com/MolSSI/mmic
         cd mmic && pip install . && cd .. && rm -rf mmic
         git clone https://github.com/MolSSI/MMElemental
