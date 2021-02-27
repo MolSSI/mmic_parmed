@@ -1,10 +1,16 @@
-from mmelemental.components.trans.template_component import TransComponent
 from mmelemental.models.util.output import FileOutput
 from mmelemental.models.molecule import Molecule
-from mmic_parmed.models import ParmedMol
 from typing import Dict, Any, List, Tuple, Optional
-from mmelemental.util.decorators import require
 from mmelemental.util.units import convert
+import parmed
+
+from mmic_translator import TransComponent
+from mmic_translator.models.mol_io import (
+    MolInToSchema,
+    MolInFromSchema,
+    MolOutToSchema,
+    MolOutFromSchema,
+)
 
 __all__ = ["MolToParmedComponent", "ParmedToMolComponent"]
 
@@ -14,13 +20,12 @@ class MolToParmedComponent(TransComponent):
 
     @classmethod
     def input(cls):
-        return Molecule
+        return MolInFromSchema
 
     @classmethod
     def output(cls):
-        return ParmedMol
+        return MolOutFromSchema
 
-    @require("parmed")
     def execute(
         self,
         inputs: Molecule,
@@ -28,30 +33,32 @@ class MolToParmedComponent(TransComponent):
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, ParmedMol]:
+    ) -> Tuple[bool, MolOutFromSchema]:
         """
         Works for writing PDB files e.g. pmol.save("file.pdb") but fails for gro files
         TODO: need to investigate this more. Routine is also very slow. Try to vectorize.
         """
-        import parmed
+        if isinstance(inputs, dict):
+            inputs = self.input()(**inputs)
 
+        mmol = inputs.schema_object
         pmol = parmed.structure.Structure()
-        natoms = len(inputs.symbols)
+        natoms = len(mmol.symbols)
 
         # Use dalton as the default unit for mass in ParmEd
         units = {"mass": "dalton"}
 
-        if inputs.masses is not None:
-            masses = convert(inputs.masses, inputs.masses_units, units["mass"])
+        if mmol.masses is not None:
+            masses = convert(mmol.masses, mmol.masses_units, units["mass"])
         else:
             masses = [0] * natoms
 
-        for index, symb in enumerate(inputs.symbols):
+        for index, symb in enumerate(mmol.symbols):
 
-            name = inputs.names[index]
+            name = mmol.atom_labels[index]
             # name = ToolkitMolecule.check_name(name)
 
-            atomic_number = inputs.atomic_numbers[index]
+            atomic_number = mmol.atomic_numbers[index]
 
             # Will likely lose FF-related info ... but then Molecule is not supposed to store any params specific to FFs
             atom = parmed.topologyobjects.Atom(
@@ -76,32 +83,32 @@ class MolToParmedComponent(TransComponent):
                 epsilon14=None,
             )
 
-            if inputs.residues:
-                resname, resnum = inputs.residues[index]
+            if mmol.residues:
+                resname, resnum = mmol.residues[index]
             else:
                 resname, resnum = "UNK", 0
             # classparmed.Residue(name, number=- 1, chain='', insertion_code='', segid='', list=None)[source]
             pmol.add_atom(atom, resname, resnum + 1, chain="", inscode="", segid="")
 
-        if inputs.geometry is not None:
-            pmol.coordinates = inputs.geometry.reshape(natoms, 3)
+        if mmol.geometry is not None:
+            pmol.coordinates = mmol.geometry.reshape(natoms, 3)
             pmol.coordinates = convert(
-                pmol.coordinates, inputs.geometry_units, pmol.positions.unit.get_name()
+                pmol.coordinates, mmol.geometry_units, pmol.positions.unit.get_name()
             )
             units["length"] = pmol.positions.unit.get_name()
 
-        if inputs.velocities is not None:
+        if mmol.velocities is not None:
             units["speed"] = "angstrom/picosecond"
-            pmol.velocities = inputs.velocities.reshape(natoms, 3)
+            pmol.velocities = mmol.velocities.reshape(natoms, 3)
             pmol.velocities = convert(
-                pmol.velocities, inputs.velocities_units, units["speed"]
+                pmol.velocities, mmol.velocities_units, units["speed"]
             )
 
-        if inputs.connectivity:
-            for i, j, btype in inputs.connectivity:
+        if mmol.connectivity:
+            for i, j, btype in mmol.connectivity:
                 pmol.atoms[i].bond_to(pmol.atoms[j])
 
-        return True, ParmedMol(data=pmol, units=units)
+        return True, MolOutFromSchema(tk_object=pmol, tk_units=units)
 
 
 class ParmedToMolComponent(TransComponent):
@@ -109,29 +116,37 @@ class ParmedToMolComponent(TransComponent):
 
     @classmethod
     def input(cls):
-        return ParmedMol
+        return MolInToSchema
 
     @classmethod
     def output(cls):
-        return Molecule
+        return MolOutToSchema
 
     def execute(
         self,
-        inputs: ParmedMol,
+        inputs: MolInToSchema,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, Molecule]:
+    ) -> Tuple[bool, MolOutToSchema]:
+
+        if isinstance(inputs, dict):
+            inputs = self.input()(**inputs)
 
         # I think parmed.Structure does not store forces
-        pmol = inputs.data
+        pmol = inputs.tk_object
+        geo_units, vel_units = None, None
 
         geo = TransComponent.get(pmol, "coordinates")
-        geo_units = pmol.positions.unit.get_name() if geo is not None else None
+        if geo is not None: # General enough? hackish?
+            geo = geo.flatten()
+            geo_units = pmol.positions.unit.get_name()
 
         vel = TransComponent.get(pmol, "velocities")
-        vel_units = "angstrom/picosecond" if vel is not None else None
+        if vel is not None:
+            vel = vel.flatten()
+            vel_units = "angstrom/picosecond" # hard-coded in ParmEd
 
         atomic_nums = [atom.atomic_number for atom in pmol.atoms]
         names = [atom.name for atom in pmol.atoms]
@@ -162,7 +177,9 @@ class ParmedToMolComponent(TransComponent):
             "connectivity": connectivity,
             "masses": masses,
             "masses_units": masses_units,
-            "names": names,
+            "atom_labels": names,
         }
 
-        return True, Molecule(**input_dict)
+        out = MolOutToSchema(schema_object=Molecule(**input_dict))
+        print(out)
+        return True, out
