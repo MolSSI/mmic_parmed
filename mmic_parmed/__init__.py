@@ -30,6 +30,6 @@ ffread_ext_maps = {".psf": "psf", ".top": "top", ".prm": "prm"}
 
 _classes_map = {
     "Molecule": models.ParmedMol,
-    "Trajectory": models.ParmedTraj,
+    # "Trajectory": models.ParmedTraj,
     "ForceField": models.ParmedFF,
 }
