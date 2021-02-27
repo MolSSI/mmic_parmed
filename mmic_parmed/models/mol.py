@@ -1,8 +1,12 @@
 from pydantic import Field, validator
 from typing import Dict, Any, Optional
-from mmelemental.models.base import ToolkitModel
+from mmic_translator.models.base import ToolkitModel
 from mmelemental.models.molecule import Molecule
-from mmelemental.util.decorators import require
+import parmed
+
+# ParmEd converter components
+from mmic_parmed.components.mol_component import ParmedToMolComponent
+from mmic_parmed.components.mol_component import MolToParmedComponent
 
 
 __all__ = ["ParmedMol"]
@@ -12,12 +16,9 @@ class ParmedMol(ToolkitModel):
     """ A model for ParmEd.Universe storing an MM molecule. """
 
     @property
-    @require("parmed")
     def dtype(self):
         """ Returns the fundamental molecule object type. """
-        from parmed.structure import Structure
-
-        return Structure
+        return parmed.structure.Structure
 
     @classmethod
     def isvalid(cls, data):
@@ -29,7 +30,6 @@ class ParmedMol(ToolkitModel):
         raise ValueError("ParmEd molecule object does not contain any atoms!")
 
     @classmethod
-    @require("parmed")
     def from_file(
         cls, filename: str = None, top_filename: str = None, **kwargs
     ) -> "ParmedMol":
@@ -87,9 +87,8 @@ class ParmedMol(ToolkitModel):
         ParmedMol
             A constructed ParmedMol class.
         """
-        from mmic_parmed.components.mol_component import MolToParmedComponent
-
-        return MolToParmedComponent.compute(data)
+        out = MolToParmedComponent.compute(data)
+        return cls(data=out.tk_object, units=out.tk_units)
 
     def to_file(self, filename: str, dtype: str = None, **kwargs):
         """Writes the molecule to a file.
@@ -115,6 +114,8 @@ class ParmedMol(ToolkitModel):
         **kwargs
             Additional kwargs to pass to the constructor.
         """
-        from mmic_parmed.components.mol_component import ParmedToMolComponent
-
-        return ParmedToMolComponent.compute(self)
+        inputs = {"tk_object": self.data, "schema_version": version, "kwargs": kwargs}
+        out = ParmedToMolComponent.compute(inputs)
+        if version:
+            assert version == out.schema_version
+        return out.schema_object
