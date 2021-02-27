@@ -25,15 +25,16 @@ def test_mmic_parmed_imported():
     assert "mmic_parmed" in sys.modules
 
 
-def test_mda_to_mol(file):
+def test_mda_to_mol(file, **kwargs):
     struct = parmed.load_file(file)
-    pmol = mmic_parmed.models.ParmedMol(data=struct)
-    return mmic_parmed.components.ParmedToMolComponent.compute(pmol)
+    inputs = {"tk_object": struct, "kwargs": kwargs}
+    return mmic_parmed.components.ParmedToMolComponent.compute(inputs)
 
 
 def test_mol_to_mda(file):
-    mm_mol = mm.models.molecule.mm_mol.Molecule.from_file(file)
-    return mmic_parmed.components.MolToParmedComponent.compute(mm_mol)
+    mmol = mm.models.molecule.mm_mol.Molecule.from_file(file)
+    inputs = {"schema_object": mmol}
+    return mmic_parmed.components.MolToParmedComponent.compute(inputs)
 
 
 def test_io_methods(file):
