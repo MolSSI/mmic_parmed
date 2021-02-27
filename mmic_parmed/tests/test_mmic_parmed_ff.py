@@ -25,15 +25,16 @@ def test_mmic_parmed_imported():
     assert "mmic_parmed" in sys.modules
 
 
-def test_parmed_to_ff(file):
+def test_parmed_to_ff(file, **kwargs):
     ff = parmed.load_file(file)
-    pff = mmic_parmed.models.ParmedFF(data=ff)
-    return mmic_parmed.components.ParmedToFFComponent.compute(pff)
+    inputs = {"tk_object": ff, "kwargs": kwargs}
+    return mmic_parmed.components.ParmedToFFComponent.compute(inputs)
 
 
-def test_ff_to_parmed(file):
+def test_ff_to_parmed(file, **kwargs):
     mm_ff = mm.models.forcefield.mm_ff.ForceField.from_file(file)
-    # return mmic_parmed.components.FFToParmedComponent.compute(mm_ff)
+    inputs = {"schema_object": mm_ff, "kwargs": kwargs}
+    return mmic_parmed.components.FFToParmedComponent.compute(inputs)
 
 
 def test_io_methods(file):
