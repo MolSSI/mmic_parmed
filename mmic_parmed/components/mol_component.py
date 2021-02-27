@@ -105,8 +105,32 @@ class MolToParmedComponent(TransComponent):
             )
 
         if mmol.connectivity:
-            for i, j, btype in mmol.connectivity:
-                pmol.atoms[i].bond_to(pmol.atoms[j])
+            for (
+                i,
+                j,
+                _,
+            ) in mmol.connectivity:  # _: bond order ... can we use it in ParmEd?
+                # pmol.atoms[i].bond_to(pmol.atoms[j])
+                pmol.bonds.append(
+                    parmed.topologyobjects.Bond(pmol.atoms[i], pmol.atoms[j])
+                )
+                # both implementations seem to perform almost the same
+
+        if mmol.angles:
+            for i, j, k in mmol.angles:
+                pmol.angles.append(
+                    parmed.topologyobjects.Angle(
+                        pmol.atoms[i], pmol.atoms[j], pmol.atoms[k]
+                    )
+                )
+
+        if mmol.dihedrals:
+            for i, j, k, l in mmol.dihedrals:
+                pmol.dihedrals.append(
+                    parmed.topologyobjects.Dihedral(
+                        pmol.atoms[i], pmol.atoms[j], pmol.atoms[k], pmol.atoms[l]
+                    )
+                )
 
         return True, MolOutFromSchema(tk_object=pmol, tk_units=units)
 
@@ -139,14 +163,14 @@ class ParmedToMolComponent(TransComponent):
         geo_units, vel_units = None, None
 
         geo = TransComponent.get(pmol, "coordinates")
-        if geo is not None: # General enough? hackish?
+        if geo is not None:  # General enough? hackish?
             geo = geo.flatten()
             geo_units = pmol.positions.unit.get_name()
 
         vel = TransComponent.get(pmol, "velocities")
         if vel is not None:
             vel = vel.flatten()
-            vel_units = "angstrom/picosecond" # hard-coded in ParmEd
+            vel_units = "angstrom/picosecond"  # hard-coded in ParmEd
 
         atomic_nums = [atom.atomic_number for atom in pmol.atoms]
         names = [atom.name for atom in pmol.atoms]
@@ -181,5 +205,4 @@ class ParmedToMolComponent(TransComponent):
         }
 
         out = MolOutToSchema(schema_object=Molecule(**input_dict))
-        print(out)
         return True, out
