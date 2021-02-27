@@ -49,7 +49,6 @@ class ParmedMol(ToolkitModel):
         ParmedMol
             A constructed ParmedMol class.
         """
-        import parmed
 
         kwargs.pop(
             "dtype", None
@@ -87,7 +86,8 @@ class ParmedMol(ToolkitModel):
         ParmedMol
             A constructed ParmedMol class.
         """
-        out = MolToParmedComponent.compute(data)
+        inputs = {"schema_object": data, "schema_version": version}
+        out = MolToParmedComponent.compute(inputs)
         return cls(data=out.tk_object, units=out.tk_units)
 
     def to_file(self, filename: str, dtype: str = None, **kwargs):
