@@ -1,4 +1,3 @@
-from mmelemental.components.trans import TransComponent
 from mmelemental.models.util.output import FileOutput
 from mmelemental.models.forcefield.mm_ff import (
     ForceField,
@@ -7,10 +6,16 @@ from mmelemental.models.forcefield.mm_ff import (
     Dihedrals,
     NonBonded,
 )
-from mmic_parmed.models import ParmedFF
+from mmic_translator.models.ff_io import (
+    FFInToSchema,
+    FFInFromSchema,
+    FFOutToSchema,
+    FFOutFromSchema,
+)
+from mmic_translator.components import TransComponent
 from typing import Dict, Any, List, Tuple, Optional
-from mmelemental.util.decorators import require
 from mmelemental.util.units import convert
+import parmed
 
 __all__ = ["FFToParmedComponent", "ParmedToFFComponent"]
 
@@ -20,53 +25,66 @@ class FFToParmedComponent(TransComponent):
 
     @classmethod
     def input(cls):
-        return ForceField
+        return FFInFromSchema
 
     @classmethod
     def output(cls):
-        return ParmedFF
+        return FFOutFromSchema
 
-    @require("parmed")
     def execute(
         self,
-        inputs: ForceField,
+        inputs: FFInFromSchema,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, ParmedFF]:
+    ) -> Tuple[bool, FFOutFromSchema]:
         """
         Works for writing PDB files e.g. pmol.save("file.pdb") but fails for gro files
         TODO: need to investigate this more. Routine is also very slow. Try to vectorize.
         """
-        import parmed
-        import mmic_parmed
-
-        pmol = parmed.structure.Structure()
-        natoms = len(inputs.symbols)
+        ff = parmed.structure.Structure()
+        params = parmed.parameters.ParameterSet()
 
         # Use dalton as the default unit for mass in ParmEd
         units = {"mass": "dalton"}
+        mm_ff = inputs.schema_object
+        natoms = len(mm_ff.symbols)
+        masses = mm_ff.masses
 
-        if inputs.masses is not None:
-            masses = convert(inputs.masses, inputs.masses_units, units["mass"])
-        else:
-            masses = [0] * natoms
+        rmin_factor = convert(1.0, atom.urmin.unit.get_name(), mm_ff.bonds.length_units)
+        rmin_14_factor = convert(
+            1.0, atom.urmin_14.unit.get_name(), mm_ff.nonbonded.sigma_units
+        )
+        epsilon_factor = convert(
+            1.0, atom.uepsilon.unit.get_name(), mm_ff.nonbonded.epsilon_units
+        )
+        epsilon_14_factor = convert(
+            1.0, atom.uepsilon_14.unit.get_name(), mm_ff.nonbonded.epsilon_units
+        )
+        scaling_factor = 2 ** (1.0 / 6.0)  # rmin = 2^(1/6) sigma
+        sigma = mm_ff.nonbonded.sigma * rmin_factor * scaling_factor
+        sigma_14 = mm_ff.nonbonded.sigma14 * rmin_14_factor * scaling_factor
+        epsilon = mm_ff.nonbonded.epsilon * epsilon_factor
+        epsilon_14 = mm_ff.nonbonded.epsilon * epsilon_14_factor
+        sigma, sigma_14, epsilon, epsilon_14 = zip(*params)
 
-        for index, symb in enumerate(inputs.symbols):
+        for index, symbol in enumerate(mm_ff.symbols):
 
-            name = inputs.names[index]
-            # name = ToolkitMolecule.check_name(name)
+            atype = AtomType(
+                name=name, number=idx, mass=mass, atomic_number=atomic_number
+            )
 
-            atomic_number = inputs.atomic_numbers[index]
+            # atomic_number = mm_ff.atomic_numbers[index]
+            type = mm_ff.types[index]
 
             # Will likely lose FF-related info ... but then Molecule is not supposed to store any params specific to FFs
             atom = parmed.topologyobjects.Atom(
                 list=None,
-                atomic_number=atomic_number,
-                name=name,
-                type=symb,
-                mass=masses[index],
+                # atomic_number=atomic_number,
+                name=type,
+                type=symbol,
+                # mass=masses[index],
                 nb_idx=0,
                 solvent_radius=0.0,
                 screen=0.0,
@@ -90,25 +108,7 @@ class FFToParmedComponent(TransComponent):
             # classparmed.Residue(name, number=- 1, chain='', insertion_code='', segid='', list=None)[source]
             pmol.add_atom(atom, resname, resnum + 1, chain="", inscode="", segid="")
 
-        if inputs.geometry is not None:
-            pmol.coordinates = inputs.geometry.reshape(natoms, 3)
-            pmol.coordinates = convert(
-                pmol.coordinates, inputs.geometry_units, pmol.positions.unit.get_name()
-            )
-            units["length"] = pmol.positions.unit.get_name()
-
-        if inputs.velocities is not None:
-            pmol.velocities = inputs.velocities.reshape(natoms, 3)
-            pmol.velocities = convert(
-                pmol.velocities, inputs.velocities_units, mmic_parmed.units["speed"]
-            )
-            units["speed"] = mmic_parmed.units["speed"]
-
-        if inputs.connectivity:
-            for i, j, btype in inputs.connectivity:
-                pmol.atoms[i].bond_to(pmol.atoms[j])
-
-        return True, ParmedFF(data=pmol, units=units)
+        return True, FFOutFromSchema(tk_object=pmol, units=units)
 
 
 class ParmedToFFComponent(TransComponent):
@@ -116,22 +116,25 @@ class ParmedToFFComponent(TransComponent):
 
     @classmethod
     def input(cls):
-        return ParmedFF
+        return FFInToSchema
 
     @classmethod
     def output(cls):
-        return ForceField
+        return FFOutToSchema
 
     def execute(
         self,
-        inputs: ParmedFF,
+        inputs: FFInToSchema,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, ForceField]:
+    ) -> Tuple[bool, FFOutToSchema]:
 
-        ff = inputs.data
+        if isinstance(inputs, dict):
+            inputs = self.input()(**inputs)
+
+        ff = inputs.tk_object
         mm_ff = ForceField(
             nonbonded=[], bonds=[], angles=[]
         )  # empty FF object, provides units
@@ -140,8 +143,8 @@ class ParmedToFFComponent(TransComponent):
         angle = ff.angles[0] if len(ff.angles) else None
         dihedral = ff.dihedrals[0] if len(ff.dihedrals) else None
 
-        data = [(atom.name, atom.charge) for atom in ff.atoms]
-        names, charges = zip(*data)
+        data = [(atom.name, atom.type, atom.charge) for atom in ff.atoms]
+        names, symbols, charges = zip(*data)
         charges = convert(
             charges, atom.ucharge.unit.get_symbol(), mm_ff.nonbonded.charges_units
         )
@@ -252,6 +255,7 @@ class ParmedToFFComponent(TransComponent):
             "exclusions": exclusions,
             "inclusions": inclusions,
             "types": names,
+            "symbols": symbols,
         }
 
-        return True, ForceField(**input_dict)
+        return True, FFOutToSchema(schema_object=ForceField(**input_dict))
