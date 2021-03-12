@@ -5,11 +5,9 @@ from mmelemental.util.units import convert
 import parmed
 
 from mmic_translator import TransComponent
-from mmic_translator.models.mol_io import (
-    MolInToSchema,
-    MolInFromSchema,
-    MolOutToSchema,
-    MolOutFromSchema,
+from mmic_translator.models.io import (
+    TransInput,
+    TransOutput,
 )
 
 __all__ = ["MolToParmedComponent", "ParmedToMolComponent"]
@@ -20,20 +18,20 @@ class MolToParmedComponent(TransComponent):
 
     @classmethod
     def input(cls):
-        return MolInFromSchema
+        return TransInput
 
     @classmethod
     def output(cls):
-        return MolOutFromSchema
+        return TransOutput
 
     def execute(
         self,
-        inputs: Molecule,
+        inputs: TransInput,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, MolOutFromSchema]:
+    ) -> Tuple[bool, TransOutput]:
         """
         Works for writing PDB files e.g. pmol.save("file.pdb") but fails for gro files
         TODO: need to investigate this more. Routine is also very slow. Try to vectorize.
@@ -132,7 +130,7 @@ class MolToParmedComponent(TransComponent):
                     )
                 )
 
-        return True, MolOutFromSchema(tk_object=pmol, tk_units=units)
+        return True, TransOutput(tk_object=pmol, tk_units=units)
 
 
 class ParmedToMolComponent(TransComponent):
@@ -140,20 +138,20 @@ class ParmedToMolComponent(TransComponent):
 
     @classmethod
     def input(cls):
-        return MolInToSchema
+        return TransInput
 
     @classmethod
     def output(cls):
-        return MolOutToSchema
+        return TransOutput
 
     def execute(
         self,
-        inputs: MolInToSchema,
+        inputs: TransInput,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, MolOutToSchema]:
+    ) -> Tuple[bool, TransOutput]:
 
         if isinstance(inputs, dict):
             inputs = self.input()(**inputs)
@@ -204,5 +202,5 @@ class ParmedToMolComponent(TransComponent):
             "atom_labels": names,
         }
 
-        out = MolOutToSchema(schema_object=Molecule(**input_dict))
-        return True, out
+        return True, TransOutput(schema_object=Molecule(**input_dict))
+
