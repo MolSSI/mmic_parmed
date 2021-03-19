@@ -17,6 +17,10 @@ bondTypes = {
     2: forcefield.bonded.bonds.potentials.Gromos96,
 }
 
+angleTypes = {
+    1: forcefield.bonded.angles.potentials.Harmonic,
+}
+
 
 class FFToParmedComponent(TransComponent):
     """ A component for converting Molecule to ParmEd molecule object. """
@@ -139,9 +143,6 @@ class ParmedToFFComponent(TransComponent):
         mm_units = forcefield.ForceField.get_units()
 
         # Need to map these to potential types
-        bonds_units = forcefield.bonded.bonds.potentials.harmonic.Harmonic.get_units()
-        angles_units = forcefield.bonded.angles.potentials.harmonic.Harmonic.get_units()
-        dihedrals_units = forcefield.bonded.dihedrals.potentials.harmonic.Harmonic.get_units()
         lj_units = forcefield.nonbonded.potentials.lenjones.LennardJones.get_units()
 
         atom = ff.atoms[0]
@@ -158,7 +159,7 @@ class ParmedToFFComponent(TransComponent):
             masses, atom.umass.unit.get_symbol(), mm_units["masses_units"]
         )
 
-        rmin_factor = convert(1.0, atom.urmin.unit.get_name(), bonds_units["lengths_units"])
+        rmin_factor = convert(1.0, atom.urmin.unit.get_name(), lj_units["sigma_units"])
         rmin_14_factor = convert(
             1.0, atom.urmin_14.unit.get_name(), lj_units["sigma_units"]
         )
@@ -182,9 +183,12 @@ class ParmedToFFComponent(TransComponent):
 
         lj = forcefield.nonbonded.potentials.LennardJones(sigma=sigma, epsilon=epsilon)
         # Need to include sigma_14 and epsilon_14
-        nonbonded = forcefield.nonbonded.NonBonded(params=lj)
+        nonbonded = forcefield.nonbonded.NonBonded(params=lj, form="LennardJones")
 
         if bond:
+            bonds_units = forcefield.bonded.bonds.potentials.harmonic.Harmonic.get_units()
+            bonds_units.update(forcefield.bonded.Bonds.get_units())
+
             bond_req_factor = convert(
                 1.0, bond.type.ureq.unit.get_name(), bonds_units["lengths_units"]
             )
@@ -192,23 +196,29 @@ class ParmedToFFComponent(TransComponent):
                 1.0, bond.type.uk.unit.get_name(), bonds_units["spring_units"]
             )
             bonds_lengths = [bond.type.req * bond_req_factor for bond in ff.bonds]
-            bonds_k = [bond.type.k * bond_k_factor for bond in ff.bonds]
+            
             bonds_type = [bond.funct for bond in ff.bonds]
+            bonds_k = [bond.type.k * bond_k_factor for bond in ff.bonds]
 
             unique_bonds_type = set(bonds_type)
+
             if len(unique_bonds_type) > 1:
+                raise NotImplementedError("Multiple bond types not yet supported.")
                 params = [
                     bondTypes.get(btype)(spring=bonds_k[bonds_type == btype])
                     for btype in unique_bonds_type if bondTypes.get(btype)
                 ]
             else:
-                params = forcefield.bonded.bonds.potentials.Harmonic(spring=bonds_k, lengths=bonds_lengths)
+                params = forcefield.bonded.bonds.potentials.Harmonic(spring=bonds_k)
 
-            bonds = forcefield.bonded.Bonds(params=params)
+            bonds = forcefield.bonded.Bonds(params=params, lengths=bonds_lengths, form="Harmonic")
         else:
             bonds = None
 
         if angle:
+            angles_units = forcefield.bonded.angles.potentials.harmonic.Harmonic.get_units()
+            angles_units.update(forcefield.bonded.Angles.get_units())
+
             angle_theta_factor = convert(
                 1.0, angle.type.utheteq.unit.get_name(), angles_units["angles_units"]
             )
@@ -221,18 +231,22 @@ class ParmedToFFComponent(TransComponent):
 
             unique_angles_type = set(angles_type)
             if len(unique_angles_type) > 1:
+                raise NotImplementedError("Multiple angle types not yet supported.")
                 params = [
                     angleTypes.get(btype)(spring=angles_k[angles_type == btype])
                     for btype in unique_angles_type if angleTypes.get(btype)
                 ]
             else:
-                params = forcefield.bonded.angles.potentials.Harmonic(spring=angles_k, angles=angles_)
+                params = forcefield.bonded.angles.potentials.Harmonic(spring=angles_k)
 
-            angles = forcefield.bonded.Angles(params=params)
+            angles = forcefield.bonded.Angles(params=params, angles=angles_, form="Harmonic")
         else:
             angles = None
 
         if False:  # dihedral:
+            dihedrals_units = forcefield.bonded.dihedrals.potentials.harmonic.Harmonic.get_units()
+            dihedrals_units.update(forcefield.bonded.Dihedrals.get_units())
+
             # Why the hell does parmed interpret dihedral.type as a list sometimes? See dialanine.top, last 8 dihedral entries. WEIRD!
             # This is a hack around this
             dtype = (
