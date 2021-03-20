@@ -45,7 +45,9 @@ class MolToParmedComponent(TransComponent):
         atom_empty = parmed.topologyobjects.Atom()
 
         if mmol.masses is not None:
-            masses = convert(mmol.masses, mmol.masses_units, atom_empty.umass.unit.get_symbol())
+            masses = convert(
+                mmol.masses, mmol.masses_units, atom_empty.umass.unit.get_symbol()
+            )
         else:
             masses = [0] * natoms
 
@@ -92,7 +94,7 @@ class MolToParmedComponent(TransComponent):
             )
 
         if mmol.velocities is not None:
-            units_speed = "angstrom/picosecond" # hard-coded in parmed 3.4.0
+            units_speed = "angstrom/picosecond"  # hard-coded in parmed 3.4.0
             pmol.velocities = mmol.velocities.reshape(natoms, 3)
             pmol.velocities = convert(
                 pmol.velocities, mmol.velocities_units, units_speed
@@ -126,7 +128,9 @@ class MolToParmedComponent(TransComponent):
                     )
                 )
 
-        return True, TransOutput(tk_object=pmol) # need to include velocity units, make a PR?
+        return True, TransOutput(
+            tk_object=pmol
+        )  # need to include velocity units, make a PR?
 
 
 class ParmedToMolComponent(TransComponent):
@@ -199,4 +203,3 @@ class ParmedToMolComponent(TransComponent):
         }
 
         return True, TransOutput(schema_object=Molecule(**input_dict))
-

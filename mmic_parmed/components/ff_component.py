@@ -54,29 +54,43 @@ class FFToParmedComponent(TransComponent):
         natoms = len(mmff.symbols)
 
         masses = TransComponent.get(mmff, "masses")
-        masses = convert(mmff.masses, mmff.masses_units, empty_atom.umass.unit.get_symbol())
+        masses = convert(
+            mmff.masses, mmff.masses_units, empty_atom.umass.unit.get_symbol()
+        )
 
         charges = TransComponent.get(mmff, "charges")
-        charges = convert(charges, mmff.charges_units, empty_atom.ucharge.unit.get_symbol())
+        charges = convert(
+            charges, mmff.charges_units, empty_atom.ucharge.unit.get_symbol()
+        )
 
         atomic_numbers = TransComponent.get(mmff, "atomic_numbers")
         atom_types = TransComponent.get(mmff, "types")
 
         # Non-bonded
-        assert(mmff.nonbonded.form == "LennardJones", "Only LJ potential supported for now")
+        assert (
+            mmff.nonbonded.form == "LennardJones",
+            "Only LJ potential supported for now",
+        )
 
         lj_units = forcefield.nonbonded.potentials.lenjones.LennardJones.get_units()
         scaling_factor = 2 ** (1.0 / 6.0)  # rmin = 2^(1/6) sigma
 
         rmin = mmff.nonbonded.params.sigma * scaling_factor
         rmin = convert(rmin, lj_units["sigma_units"], empty_atom.urmin.unit.get_name())
-        #atom.rmin_14 * rmin_14_factor * scaling_factor,
-        epsilon = convert(mmff.nonbonded.params.epsilon, lj_units["epsilon_units"], empty_atom.uepsilon.unit.get_name())
-        #atom.epsilon_14 * epsilon_14_factor,
+        # atom.rmin_14 * rmin_14_factor * scaling_factor,
+        epsilon = convert(
+            mmff.nonbonded.params.epsilon,
+            lj_units["epsilon_units"],
+            empty_atom.uepsilon.unit.get_name(),
+        )
+        # atom.epsilon_14 * epsilon_14_factor,
 
         # Bonds
-        if False: #mmff.bonds is not None:
-            assert(mmff.bonds.form == "Harmonic", "Only Harmonic potential supported for now")
+        if False:  # mmff.bonds is not None:
+            assert (
+                mmff.bonds.form == "Harmonic",
+                "Only Harmonic potential supported for now",
+            )
 
             for (
                 i,
@@ -90,8 +104,11 @@ class FFToParmedComponent(TransComponent):
                 # both implementations seem to perform almost the same
 
         # Angles
-        if False: #mmff.angles is not None:
-            assert(mmff.angles.form == "Harmonic", "Only Harmonic potential supported for now")
+        if False:  # mmff.angles is not None:
+            assert (
+                mmff.angles.form == "Harmonic",
+                "Only Harmonic potential supported for now",
+            )
 
             for i, j, k in mmff.angles.indices:
                 pmol.angles.append(
@@ -101,8 +118,11 @@ class FFToParmedComponent(TransComponent):
                 )
 
         # Dihedrals
-        if False: #mmff.dihedrals is not None:
-            assert(mmff.dihedrals.form == "Harmonic", "Only Harmonic potential supported for now")
+        if False:  # mmff.dihedrals is not None:
+            assert (
+                mmff.dihedrals.form == "Harmonic",
+                "Only Harmonic potential supported for now",
+            )
             for i, j, k, l in mmff.dihedrals.indices:
                 pmol.dihedrals.append(
                     parmed.topologyobjects.Dihedral(
@@ -154,9 +174,9 @@ class FFToParmedComponent(TransComponent):
                 epsilon=epsilon[index],
                 rmin14=None,
                 epsilon14=None,
-                #bonds=...,
-                #angles=...,
-                #dihedrals=...,
+                # bonds=...,
+                # angles=...,
+                # dihedrals=...,
                 # impropers
                 # polarizable
             )
@@ -164,7 +184,6 @@ class FFToParmedComponent(TransComponent):
             pff.add_atom(atom, "", 0, chain="", inscode="", segid="")
 
         return True, TransOutput(tk_object=pff)
-
 
 
 class ParmedToFFComponent(TransComponent):
@@ -206,9 +225,7 @@ class ParmedToFFComponent(TransComponent):
         charges = convert(
             charges, atom.ucharge.unit.get_symbol(), mm_units["charges_units"]
         )
-        masses = convert(
-            masses, atom.umass.unit.get_symbol(), mm_units["masses_units"]
-        )
+        masses = convert(masses, atom.umass.unit.get_symbol(), mm_units["masses_units"])
 
         rmin_factor = convert(1.0, atom.urmin.unit.get_name(), lj_units["sigma_units"])
         rmin_14_factor = convert(
@@ -237,7 +254,9 @@ class ParmedToFFComponent(TransComponent):
         nonbonded = forcefield.nonbonded.NonBonded(params=lj, form="LennardJones")
 
         if bond:
-            bonds_units = forcefield.bonded.bonds.potentials.harmonic.Harmonic.get_units()
+            bonds_units = (
+                forcefield.bonded.bonds.potentials.harmonic.Harmonic.get_units()
+            )
             bonds_units.update(forcefield.bonded.Bonds.get_units())
 
             bond_req_factor = convert(
@@ -247,7 +266,7 @@ class ParmedToFFComponent(TransComponent):
                 1.0, bond.type.uk.unit.get_name(), bonds_units["spring_units"]
             )
             bonds_lengths = [bond.type.req * bond_req_factor for bond in ff.bonds]
-            
+
             bonds_type = [bond.funct for bond in ff.bonds]
             bonds_k = [bond.type.k * bond_k_factor for bond in ff.bonds]
 
@@ -257,17 +276,22 @@ class ParmedToFFComponent(TransComponent):
                 raise NotImplementedError("Multiple bond types not yet supported.")
                 params = [
                     bondTypes.get(btype)(spring=bonds_k[bonds_type == btype])
-                    for btype in unique_bonds_type if bondTypes.get(btype)
+                    for btype in unique_bonds_type
+                    if bondTypes.get(btype)
                 ]
             else:
                 params = forcefield.bonded.bonds.potentials.Harmonic(spring=bonds_k)
 
-            bonds = forcefield.bonded.Bonds(params=params, lengths=bonds_lengths, form="Harmonic")
+            bonds = forcefield.bonded.Bonds(
+                params=params, lengths=bonds_lengths, form="Harmonic"
+            )
         else:
             bonds = None
 
         if angle:
-            angles_units = forcefield.bonded.angles.potentials.harmonic.Harmonic.get_units()
+            angles_units = (
+                forcefield.bonded.angles.potentials.harmonic.Harmonic.get_units()
+            )
             angles_units.update(forcefield.bonded.Angles.get_units())
 
             angle_theta_factor = convert(
@@ -285,17 +309,22 @@ class ParmedToFFComponent(TransComponent):
                 raise NotImplementedError("Multiple angle types not yet supported.")
                 params = [
                     angleTypes.get(btype)(spring=angles_k[angles_type == btype])
-                    for btype in unique_angles_type if angleTypes.get(btype)
+                    for btype in unique_angles_type
+                    if angleTypes.get(btype)
                 ]
             else:
                 params = forcefield.bonded.angles.potentials.Harmonic(spring=angles_k)
 
-            angles = forcefield.bonded.Angles(params=params, angles=angles_, form="Harmonic")
+            angles = forcefield.bonded.Angles(
+                params=params, angles=angles_, form="Harmonic"
+            )
         else:
             angles = None
 
         if False:  # dihedral:
-            dihedrals_units = forcefield.bonded.dihedrals.potentials.harmonic.Harmonic.get_units()
+            dihedrals_units = (
+                forcefield.bonded.dihedrals.potentials.harmonic.Harmonic.get_units()
+            )
             dihedrals_units.update(forcefield.bonded.Dihedrals.get_units())
 
             # Why the hell does parmed interpret dihedral.type as a list sometimes? See dialanine.top, last 8 dihedral entries. WEIRD!
