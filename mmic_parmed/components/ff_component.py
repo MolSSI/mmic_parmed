@@ -48,48 +48,98 @@ class FFToParmedComponent(TransComponent):
         if isinstance(inputs, dict):
             inputs = self.input()(**inputs)
 
-        ff = parmed.structure.Structure()
-        params = parmed.parameters.ParameterSet()
+        empty_atom = parmed.topologyobjects.Atom()
+        mmff = inputs.schema_object
+        pff = parmed.structure.Structure()
+        natoms = len(mmff.symbols)
 
-        # Use dalton as the default unit for mass in ParmEd
-        units = {"mass": "dalton"}
-        mm_ff = inputs.schema_object
-        natoms = len(mm_ff.symbols)
-        masses = mm_ff.masses
+        masses = TransComponent.get(mmff, "masses")
+        masses = convert(mmff.masses, mmff.masses_units, empty_atom.umass.unit.get_symbol())
 
-        rmin_factor = convert(1.0, atom.urmin.unit.get_name(), mm_ff.bonds.lengths_units)
-        rmin_14_factor = convert(
-            1.0, atom.urmin_14.unit.get_name(), mm_ff.nonbonded.sigma_units
-        )
-        epsilon_factor = convert(
-            1.0, atom.uepsilon.unit.get_name(), mm_ff.nonbonded.epsilon_units
-        )
-        epsilon_14_factor = convert(
-            1.0, atom.uepsilon_14.unit.get_name(), mm_ff.nonbonded.epsilon_units
-        )
+        charges = TransComponent.get(mmff, "charges")
+        charges = convert(charges, mmff.charges_units, empty_atom.ucharge.unit.get_symbol())
+
+        atomic_numbers = TransComponent.get(mmff, "atomic_numbers")
+        atom_types = TransComponent.get(mmff, "types")
+
+        # Non-bonded
+        assert(mmff.nonbonded.form == "LennardJones", "Only LJ potential supported for now")
+
+        lj_units = forcefield.nonbonded.potentials.lenjones.LennardJones.get_units()
         scaling_factor = 2 ** (1.0 / 6.0)  # rmin = 2^(1/6) sigma
-        sigma = mm_ff.nonbonded.sigma * rmin_factor * scaling_factor
-        sigma_14 = mm_ff.nonbonded.sigma14 * rmin_14_factor * scaling_factor
-        epsilon = mm_ff.nonbonded.epsilon * epsilon_factor
-        epsilon_14 = mm_ff.nonbonded.epsilon * epsilon_14_factor
-        sigma, sigma_14, epsilon, epsilon_14 = zip(*params)
 
-        for index, symbol in enumerate(mm_ff.symbols):
+        rmin = mmff.nonbonded.params.sigma * scaling_factor
+        rmin = convert(rmin, lj_units["sigma_units"], empty_atom.urmin.unit.get_name())
+        #atom.rmin_14 * rmin_14_factor * scaling_factor,
+        epsilon = convert(mmff.nonbonded.params.epsilon, lj_units["epsilon_units"], empty_atom.uepsilon.unit.get_name())
+        #atom.epsilon_14 * epsilon_14_factor,
 
-            atype = AtomType(
-                name=name, number=idx, mass=mass, atomic_number=atomic_number
-            )
+        # Bonds
+        if False: #mmff.bonds is not None:
+            assert(mmff.bonds.form == "Harmonic", "Only Harmonic potential supported for now")
 
-            # atomic_number = mm_ff.atomic_numbers[index]
-            type = mm_ff.types[index]
+            for (
+                i,
+                j,
+                _,
+            ) in mmff.bonds.indices:  # _: bond order ... can we use it in ParmEd?
+                # pmol.atoms[i].bond_to(pmol.atoms[j])
+                pmol.bonds.append(
+                    parmed.topologyobjects.Bond(pmol.atoms[i], pmol.atoms[j])
+                )
+                # both implementations seem to perform almost the same
+
+        # Angles
+        if False: #mmff.angles is not None:
+            assert(mmff.angles.form == "Harmonic", "Only Harmonic potential supported for now")
+
+            for i, j, k in mmff.angles.indices:
+                pmol.angles.append(
+                    parmed.topologyobjects.Angle(
+                        pmol.atoms[i], pmol.atoms[j], pmol.atoms[k]
+                    )
+                )
+
+        # Dihedrals
+        if False: #mmff.dihedrals is not None:
+            assert(mmff.dihedrals.form == "Harmonic", "Only Harmonic potential supported for now")
+            for i, j, k, l in mmff.dihedrals.indices:
+                pmol.dihedrals.append(
+                    parmed.topologyobjects.Dihedral(
+                        pmol.atoms[i], pmol.atoms[j], pmol.atoms[k], pmol.atoms[l]
+                    )
+                )
+
+        for index, symb in enumerate(mmff.symbols):
 
             # Will likely lose FF-related info ... but then Molecule is not supposed to store any params specific to FFs
+            if atomic_numbers is not None:
+                atomic_number = atomic_numbers[index]
+            else:
+                atomic_number = None
+
+            if atom_types is not None:
+                atom_type = atom_types[index]
+            else:
+                atom_type = None
+
+            if masses is not None:
+                mass = masses[index]
+            else:
+                mass = None
+
+            if charges is not None:
+                charge = charges[index]
+            else:
+                charge = None
+
             atom = parmed.topologyobjects.Atom(
                 list=None,
-                # atomic_number=atomic_number,
-                name=type,
-                type=symbol,
-                # mass=masses[index],
+                atomic_number=atomic_number,
+                name=symb,
+                type=atom_type,
+                mass=mass,
+                charge=charge,
                 nb_idx=0,
                 solvent_radius=0.0,
                 screen=0.0,
@@ -100,20 +150,21 @@ class FFToParmedComponent(TransComponent):
                 bfactor=0.0,
                 altloc="",
                 number=-1,
-                rmin=None,
-                epsilon=None,
+                rmin=rmin[index],
+                epsilon=epsilon[index],
                 rmin14=None,
                 epsilon14=None,
+                #bonds=...,
+                #angles=...,
+                #dihedrals=...,
+                # impropers
+                # polarizable
             )
 
-            if inputs.residues:
-                resname, resnum = inputs.residues[index]
-            else:
-                resname, resnum = "UNK", 0
-            # classparmed.Residue(name, number=- 1, chain='', insertion_code='', segid='', list=None)[source]
-            pmol.add_atom(atom, resname, resnum + 1, chain="", inscode="", segid="")
+            pff.add_atom(atom, "", 0, chain="", inscode="", segid="")
 
-        return True, TransOutput(tk_object=pmol, units=units)
+        return True, TransOutput(tk_object=pff)
+
 
 
 class ParmedToFFComponent(TransComponent):
