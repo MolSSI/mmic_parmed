@@ -42,12 +42,10 @@ class MolToParmedComponent(TransComponent):
         mmol = inputs.schema_object
         pmol = parmed.structure.Structure()
         natoms = len(mmol.symbols)
-
-        # Use dalton as the default unit for mass in ParmEd
-        units = {"mass": "dalton"}
+        atom_empty = parmed.topologyobjects.Atom()
 
         if mmol.masses is not None:
-            masses = convert(mmol.masses, mmol.masses_units, units["mass"])
+            masses = convert(mmol.masses, mmol.masses_units, atom_empty.umass.unit.get_symbol())
         else:
             masses = [0] * natoms
 
@@ -63,7 +61,6 @@ class MolToParmedComponent(TransComponent):
                 list=None,
                 atomic_number=atomic_number,
                 name=name,
-                type=symb,
                 mass=masses[index],
                 nb_idx=0,
                 solvent_radius=0.0,
@@ -93,13 +90,12 @@ class MolToParmedComponent(TransComponent):
             pmol.coordinates = convert(
                 pmol.coordinates, mmol.geometry_units, pmol.positions.unit.get_name()
             )
-            units["length"] = pmol.positions.unit.get_name()
 
         if mmol.velocities is not None:
-            units["speed"] = "angstrom/picosecond"
+            units_speed = "angstrom/picosecond" # hard-coded in parmed 3.4.0
             pmol.velocities = mmol.velocities.reshape(natoms, 3)
             pmol.velocities = convert(
-                pmol.velocities, mmol.velocities_units, units["speed"]
+                pmol.velocities, mmol.velocities_units, units_speed
             )
 
         if mmol.connectivity:
@@ -130,7 +126,7 @@ class MolToParmedComponent(TransComponent):
                     )
                 )
 
-        return True, TransOutput(tk_object=pmol, tk_units=units)
+        return True, TransOutput(tk_object=pmol) # need to include velocity units, make a PR?
 
 
 class ParmedToMolComponent(TransComponent):
