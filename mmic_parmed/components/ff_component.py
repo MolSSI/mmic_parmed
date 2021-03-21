@@ -183,7 +183,7 @@ class FFToParmedComponent(TransComponent):
 
             pff.add_atom(atom, "", 0, chain="", inscode="", segid="")
 
-        return True, TransOutput(tk_object=pff)
+        return True, TransOutput(trans_input=inputs, data_object=pff)
 
 
 class ParmedToFFComponent(TransComponent):
@@ -209,7 +209,7 @@ class ParmedToFFComponent(TransComponent):
         if isinstance(inputs, dict):
             inputs = self.input()(**inputs)
 
-        ff = inputs.tk_object
+        ff = inputs.data_object
         mm_units = forcefield.ForceField.get_units()
 
         # Need to map these to potential types
@@ -379,4 +379,5 @@ class ParmedToFFComponent(TransComponent):
             "symbols": symbols,
         }
 
-        return True, TransOutput(schema_object=forcefield.ForceField(**input_dict))
+        ff = forcefield.ForceField(**input_dict)
+        return True, TransOutput(trans_input=inputs, schema_object=ff)

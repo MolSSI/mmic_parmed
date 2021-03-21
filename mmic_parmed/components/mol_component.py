@@ -4,8 +4,8 @@ from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.units import convert
 import parmed
 
-from mmic_translator import TransComponent
-from mmic_translator.models.io import (
+from mmic_translator import (
+    TransComponent,
     TransInput,
     TransOutput,
 )
@@ -129,7 +129,7 @@ class MolToParmedComponent(TransComponent):
                 )
 
         return True, TransOutput(
-            tk_object=pmol
+            trans_input=inputs, data_object=pmol
         )  # need to include velocity units, make a PR?
 
 
@@ -157,7 +157,7 @@ class ParmedToMolComponent(TransComponent):
             inputs = self.input()(**inputs)
 
         # I think parmed.Structure does not store forces
-        pmol = inputs.tk_object
+        pmol = inputs.data_object
         geo_units, vel_units = None, None
 
         geo = TransComponent.get(pmol, "coordinates")
@@ -202,4 +202,6 @@ class ParmedToMolComponent(TransComponent):
             "atom_labels": names,
         }
 
-        return True, TransOutput(schema_object=Molecule(**input_dict))
+        return True, TransOutput(
+            trans_input=inputs, schema_object=Molecule(**input_dict)
+        )
