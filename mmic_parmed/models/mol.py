@@ -87,7 +87,7 @@ class ParmedMol(ToolkitModel):
         """
         inputs = {"schema_object": data, "schema_version": version}
         out = MolToParmedComponent.compute(inputs)
-        return cls(data=out.tk_object, units=out.tk_units)
+        return cls(data=out.data_object, units=out.data_units)
 
     def to_file(self, filename: str, dtype: str = None, **kwargs):
         """Writes the molecule to a file.
@@ -113,7 +113,7 @@ class ParmedMol(ToolkitModel):
         **kwargs
             Additional kwargs to pass to the constructor.
         """
-        inputs = {"tk_object": self.data, "schema_version": version, "kwargs": kwargs}
+        inputs = {"data_object": self.data, "schema_version": version, "kwargs": kwargs}
         out = ParmedToMolComponent.compute(inputs)
         if version:
             assert version == out.schema_version

@@ -71,7 +71,7 @@ class ParmedFF(ToolkitModel):
         """
         inputs = {"schema_object": data, "schema_version": version}
         out = FFToParmedComponent.compute(inputs)
-        return cls(data=out.tk_object, units=out.tk_units)
+        return cls(data=out.data_object, units=out.data_units)
 
     def to_file(self, filename: str, dtype: str = None, **kwargs):
         """Writes the forcefield to a file.
@@ -97,7 +97,7 @@ class ParmedFF(ToolkitModel):
         **kwargs
             Additional kwargs to pass to the constructor.
         """
-        inputs = {"tk_object": self.data, "schema_version": version, "kwargs": kwargs}
+        inputs = {"data_object": self.data, "schema_version": version, "kwargs": kwargs}
         out = ParmedToFFComponent.compute(inputs)
         if version:
             assert version == out.schema_version
