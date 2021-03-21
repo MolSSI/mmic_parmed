@@ -31,7 +31,7 @@ def test_mmic_parmed_imported():
 
 def test_parmed_to_ff(top_file, **kwargs):
     ff = parmed.load_file(top_file)
-    inputs = {"tk_object": ff, "kwargs": kwargs}
+    inputs = {"data_object": ff, "kwargs": kwargs}
     return mmic_parmed.components.ParmedToFFComponent.compute(inputs)
 
 
