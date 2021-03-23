@@ -52,7 +52,7 @@ class ParmedFF(ToolkitModel):
 
     @classmethod
     def from_schema(
-        cls, data: ForceField, version: Optional[str] = None, **kwargs: Dict[str, Any]
+        cls, data: ForceField, version: Optional[int] = None, **kwargs: Dict[str, Any]
     ) -> "ParmedFF":
         """
         Constructs an ParmedFF object from an MMSchema ForceField object.
@@ -60,8 +60,8 @@ class ParmedFF(ToolkitModel):
         ----------
         data: ForceField
             Data to construct the forcefield object from.
-        version: str, optional
-            Schema version e.g. 1.0.1
+        version: int, optional
+            Schema version e.g. 1. Overwrites data.schema_version.
         **kwargs
             Additional kwargs to pass to the constructors.
         Returns
@@ -69,7 +69,7 @@ class ParmedFF(ToolkitModel):
         ParmedFF
             A constructed ParmedFF object.
         """
-        inputs = {"schema_object": data, "schema_version": version}
+        inputs = {"schema_object": data, "schema_version": version or data.schema_version}
         out = FFToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
 
@@ -88,12 +88,12 @@ class ParmedFF(ToolkitModel):
             kwargs["format"] = dtype
         self.data.save(filename, **kwargs)
 
-    def to_schema(self, version: Optional[str] = None, **kwargs) -> ForceField:
+    def to_schema(self, version: Optional[int] = 0, **kwargs) -> ForceField:
         """Converts the forcefield to MMSchema ForceField object.
         Parameters
         ----------
-        version: str, optional
-            Schema specification version to comply with e.g. 1.0.1.
+        version: int, optional
+            Schema specification version to comply with e.g. 1.
         **kwargs
             Additional kwargs to pass to the constructor.
         """

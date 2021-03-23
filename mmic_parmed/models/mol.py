@@ -68,7 +68,7 @@ class ParmedMol(ToolkitModel):
 
     @classmethod
     def from_schema(
-        cls, data: Molecule, version: Optional[str] = None, **kwargs: Dict[str, Any]
+        cls, data: Molecule, version: Optional[int] = None, **kwargs: Dict[str, Any]
     ) -> "ParmedMol":
         """
         Constructs an ParmedMol object from an MMSchema Molecule object.
@@ -76,8 +76,8 @@ class ParmedMol(ToolkitModel):
         ----------
         data: Molecule
             Data to construct Molecule from.
-        version: str, optional
-            Schema version e.g. 1.0.1
+        version: int, optional
+            Schema version e.g. 1. Overwrites data.schema_version.
         **kwargs
             Additional kwargs to pass to the constructors.
         Returns
@@ -85,7 +85,7 @@ class ParmedMol(ToolkitModel):
         ParmedMol
             A constructed ParmedMol class.
         """
-        inputs = {"schema_object": data, "schema_version": version}
+        inputs = {"schema_object": data, "schema_version": version or data.schema_version}
         out = MolToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
 
@@ -104,7 +104,7 @@ class ParmedMol(ToolkitModel):
             kwargs["format"] = dtype
         self.data.save(filename, **kwargs)
 
-    def to_schema(self, version: Optional[str] = None, **kwargs) -> Molecule:
+    def to_schema(self, version: Optional[int] = 0, **kwargs) -> Molecule:
         """Converts the molecule to MMSchema molecule.
         Parameters
         ----------
