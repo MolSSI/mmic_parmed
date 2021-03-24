@@ -375,7 +375,7 @@ class ParmedToFFComponent(TransComponent):
             "nonbonded": nonbonded,
             "exclusions": exclusions,
             "inclusions": inclusions,
-            "types": names,
+            "defs": names,
             "symbols": symbols,
         }
 
