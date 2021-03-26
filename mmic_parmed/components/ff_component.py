@@ -183,7 +183,7 @@ class FFToParmedComponent(TransComponent):
 
             pff.add_atom(atom, "", 0, chain="", inscode="", segid="")
 
-        return True, TransOutput(trans_input=inputs, data_object=pff)
+        return True, TransOutput(proc_input=inputs, data_object=pff)
 
 
 class ParmedToFFComponent(TransComponent):
@@ -380,4 +380,4 @@ class ParmedToFFComponent(TransComponent):
         }
 
         ff = forcefield.ForceField(**input_dict)
-        return True, TransOutput(trans_input=inputs, schema_object=ff)
+        return True, TransOutput(proc_input=inputs, schema_object=ff)

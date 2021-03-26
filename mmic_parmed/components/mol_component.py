@@ -129,7 +129,7 @@ class MolToParmedComponent(TransComponent):
                 )
 
         return True, TransOutput(
-            trans_input=inputs, data_object=pmol
+            proc_input=inputs, data_object=pmol
         )  # need to include velocity units, make a PR?
 
 
@@ -203,5 +203,5 @@ class ParmedToMolComponent(TransComponent):
         }
 
         return True, TransOutput(
-            trans_input=inputs, schema_object=Molecule(**input_dict)
+            proc_input=inputs, schema_object=Molecule(**input_dict)
         )
