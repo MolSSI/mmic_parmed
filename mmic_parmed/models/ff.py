@@ -69,7 +69,10 @@ class ParmedFF(ToolkitModel):
         ParmedFF
             A constructed ParmedFF object.
         """
-        inputs = {"schema_object": data, "schema_version": version or data.schema_version}
+        inputs = {
+            "schema_object": data,
+            "schema_version": version or data.schema_version,
+        }
         out = FFToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
 

@@ -85,7 +85,10 @@ class ParmedMol(ToolkitModel):
         ParmedMol
             A constructed ParmedMol class.
         """
-        inputs = {"schema_object": data, "schema_version": version or data.schema_version}
+        inputs = {
+            "schema_object": data,
+            "schema_version": version or data.schema_version,
+        }
         out = MolToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
 
