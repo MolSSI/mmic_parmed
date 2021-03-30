@@ -16,14 +16,6 @@ __all__ = ["MolToParmedComponent", "ParmedToMolComponent"]
 class MolToParmedComponent(TransComponent):
     """ A component for converting Molecule to ParmEd molecule object. """
 
-    @classmethod
-    def input(cls):
-        return TransInput
-
-    @classmethod
-    def output(cls):
-        return TransOutput
-
     def execute(
         self,
         inputs: TransInput,
@@ -135,14 +127,6 @@ class MolToParmedComponent(TransComponent):
 
 class ParmedToMolComponent(TransComponent):
     """ A component for converting ParmEd molecule to Molecule object. """
-
-    @classmethod
-    def input(cls):
-        return TransInput
-
-    @classmethod
-    def output(cls):
-        return TransOutput
 
     def execute(
         self,
