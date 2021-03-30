@@ -25,14 +25,6 @@ angleTypes = {
 class FFToParmedComponent(TransComponent):
     """ A component for converting Molecule to ParmEd molecule object. """
 
-    @classmethod
-    def input(cls):
-        return TransInput
-
-    @classmethod
-    def output(cls):
-        return TransOutput
-
     def execute(
         self,
         inputs: TransInput,
@@ -188,14 +180,6 @@ class FFToParmedComponent(TransComponent):
 
 class ParmedToFFComponent(TransComponent):
     """ A component for converting ParmEd molecule to Molecule object. """
-
-    @classmethod
-    def input(cls):
-        return TransInput
-
-    @classmethod
-    def output(cls):
-        return TransOutput
 
     def execute(
         self,
