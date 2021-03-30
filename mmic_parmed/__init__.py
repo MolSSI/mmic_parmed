@@ -27,6 +27,7 @@ molread_ext_maps = {
 molwrite_ext_maps = {".gro": "gro", ".pdb": "pdb"}
 
 ffread_ext_maps = {".psf": "psf", ".top": "top", ".prm": "prm"}
+ffwrite_ext_maps = {".psf": "psf", ".top": "top", ".prm": "prm"}
 
 _classes_map = {
     "Molecule": models.ParmedMol,
