@@ -1,0 +1,69 @@
+;
+;   File ff2.top  was generated
+;   By user: levnon (1000)
+;   On host:levnon 
+;   At date:Wed. March  3 15:20:21 2021 
+;
+;   This is a standalone topology file
+;
+;   Created by:
+;   ParmEd:       , VERSION3.4.0+13.gef855348 
+;   Executable:   
+;   Library dir:  /usr/share/gromacs/top
+;   Command line:
+;     
+;
+
+[ defaults ]
+; nbfunc        comb-rule       gen-pairs       fudgeLJ fudgeQQ
+1               2               yes             1            1           
+
+[ atomtypes ]
+; name    at.num    mass    charge ptype  sigma      epsilon
+HC             1   1.008000  0.00000000  A       0.264953      0.0656888
+CT             6  12.010000  0.00000000  A       0.339967        0.45773
+C              6  12.010000  0.00000000  A       0.339967       0.359824
+O              8  16.000000  0.00000000  A       0.295992        0.87864
+N              7  14.010000  0.00000000  A          0.325        0.71128
+H              1   1.008000  0.00000000  A       0.106908      0.0656888
+H1             1   1.008000  0.00000000  A       0.247135      0.0656888
+
+
+[ moleculetype ]
+; Name            nrexcl
+ACE          3
+
+[ atoms ]
+;   nr       type  resnr residue  atom   cgnr    charge       mass  typeB    chargeB      massB
+; residue    1 ACE rtp ACE q 0.1
+    1         HC      1    ACE      H      1 0.11230000   1.008000   ; qtot 0.112300
+
+
+[ moleculetype ]
+; Name            nrexcl
+ALA          3
+
+[ atoms ]
+;   nr       type  resnr residue  atom   cgnr    charge       mass  typeB    chargeB      massB
+; residue    1 ALA rtp ALA q -0.4
+    1          N      1    ALA      N      1 -0.41570000  14.010000   ; qtot -0.415700
+
+
+[ moleculetype ]
+; Name            nrexcl
+NME          3
+
+[ atoms ]
+;   nr       type  resnr residue  atom   cgnr    charge       mass  typeB    chargeB      massB
+; residue    1 NME rtp NME q -0.4
+    1          N      1    NME      N      1 -0.41570000  14.010000   ; qtot -0.415700
+
+[ system ]
+; Name
+Generic title
+
+[ molecules ]
+; Compound       #mols
+ACE                  6
+ALA                 10
+NME                  6

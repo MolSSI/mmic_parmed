@@ -166,7 +166,9 @@ class FFToParmedComponent(TransComponent):
             angles_eq = convert(angles.angles, angles.angles_units, "degrees")
 
             for ai, (i, j, k) in enumerate(mmff.angles.indices):
-                atype = parmed.topologyobjects.AngleType(k=spring[ai], theteq=angles_eq[ai])
+                atype = parmed.topologyobjects.AngleType(
+                    k=spring[ai], theteq=angles_eq[ai]
+                )
                 pff.angles.append(
                     parmed.topologyobjects.Angle(
                         pff.atoms[i], pff.atoms[j], pff.atoms[k], type=atype
