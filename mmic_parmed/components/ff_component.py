@@ -21,6 +21,8 @@ angleTypes = {
     1: forcefield.bonded.angles.potentials.Harmonic,
 }
 
+# Need to fix: fudgeLJ, fudgeQQ
+
 
 class FFToParmedComponent(TransComponent):
     """ A component for converting Molecule to ParmEd molecule object. """
@@ -112,37 +114,72 @@ class FFToParmedComponent(TransComponent):
                 # polarizable=...,
             )
 
-            pff.add_atom(atom, "", 0, chain="", inscode="", segid="")
+            residues = TransComponent.get(mmff, "substructs")
+
+            if residues:
+                resname, resnum = residues[index]
+            else:
+                raise NotImplementedError("Must supply residues for now.")
+
+            pff.add_atom(atom, resname, resnum, chain="", inscode="", segid="")
 
         # Bonds
-        if mmff.bonds is not None:
-            assert mmff.bonds.form == "Harmonic", "Only Harmonic potential supported for now"
+        bonds = TransComponent.get(mmff, "bonds")
+        if bonds is not None:
+            assert (
+                mmff.bonds.form == "Harmonic"
+            ), "Only Harmonic potential supported for now"
+
+            spring = convert(
+                bonds.params.spring, bonds.params.spring_units, "kcal/mol/angstroms**2"
+            )
+            req = convert(bonds.lengths, bonds.lengths_units, "angstroms")
 
             for (
-                i,
-                j,
-                _,
-            ) in mmff.bonds.indices:  # _: bond order ... can we use it in ParmEd?
-                pff.atoms[i].bond_to(pff.atoms[j])
-                # pff.bonds.append(
-                #    parmed.topologyobjects.Bond(pff.atoms[i], pff.atoms[j])
-                # )
-                # both implementations seem to perform almost the same
-
-        # Angles
-        if mmff.angles is not None:
-            assert mmff.angles.form == "Harmonic", "Only Harmonic potential supported for now"
-
-            for i, j, k in mmff.angles.indices:
-                pff.angles.append(
-                    parmed.topologyobjects.Angle(
-                        pff.atoms[i], pff.atoms[j], pff.atoms[k]
+                bi,
+                (
+                    i,
+                    j,
+                    order,
+                ),
+            ) in enumerate(mmff.bonds.indices):
+                btype = parmed.topologyobjects.BondType(k=spring[bi], req=req[bi])
+                pff.bonds.append(
+                    parmed.topologyobjects.Bond(
+                        pff.atoms[i], pff.atoms[j], order=order, type=btype
                     )
                 )
+                pff.bond_types.append(btype)
+                # both implementations seem to perform almost the same:
+                # pff.atoms[i].bond_to(pff.atoms[j])
+
+        # Angles
+        angles = TransComponent.get(mmff, "angles")
+        if angles is not None:
+            assert (
+                mmff.angles.form == "Harmonic"
+            ), "Only Harmonic potential supported for now"
+
+            spring = convert(
+                angles.params.spring, angles.params.spring_units, "kcal/mol/radians^2"
+            )
+            angles_eq = convert(angles.angles, angles.angles_units, "degrees")
+
+            for ai, (i, j, k) in enumerate(mmff.angles.indices):
+                atype = parmed.topologyobjects.AngleType(k=spring[ai], theteq=angles_eq[ai])
+                pff.angles.append(
+                    parmed.topologyobjects.Angle(
+                        pff.atoms[i], pff.atoms[j], pff.atoms[k], type=atype
+                    )
+                )
+                pff.angle_types.append(atype)
 
         # Dihedrals
-        if mmff.dihedrals is not None:
-            assert mmff.dihedrals.form == "Harmonic", "Only Harmonic potential supported for now"
+        dihedrals = TransComponent.get(mmff, "dihedrals")
+        if dihedrals is not None:
+            assert (
+                mmff.dihedrals.form == "Harmonic"
+            ), "Only Harmonic potential supported for now"
 
             for i, j, k, l in mmff.dihedrals.indices:
                 pff.dihedrals.append(
@@ -159,7 +196,9 @@ class FFToParmedComponent(TransComponent):
         empty_atom: parmed.topologyobjects.Atom,
     ) -> Tuple["numpy.ndarray", "numpy.ndarray"]:
 
-        assert mmff.nonbonded.form == "LennardJones", "Only LJ potential supported for now"
+        assert (
+            mmff.nonbonded.form == "LennardJones"
+        ), "Only LJ potential supported for now"
 
         lj_units = forcefield.nonbonded.potentials.lenjones.LennardJones.get_units()
         scaling_factor = 2 ** (1.0 / 6.0)  # rmin = 2^(1/6) sigma
@@ -202,7 +241,17 @@ class ParmedToFFComponent(TransComponent):
         angle = ff.angles[0] if len(ff.angles) else None
         dihedral = ff.dihedrals[0] if len(ff.dihedrals) else None
 
-        data = [(atom.name, atom.type, atom.charge, atom.mass, atom.atomic_number, atom.element_name) for atom in ff.atoms]
+        data = [
+            (
+                atom.name,
+                atom.type,
+                atom.charge,
+                atom.mass,
+                atom.atomic_number,
+                atom.element_name,
+            )
+            for atom in ff.atoms
+        ]
         names, types, charges, masses, atomic_numbers, elements = zip(*data)
         charges = convert(
             charges, atom.ucharge.unit.get_symbol(), mm_units["charges_units"]
@@ -354,6 +403,9 @@ class ParmedToFFComponent(TransComponent):
             ]
             dihedrals_type = [dihedral.funct for dihedral in ff.dihedrals]
 
+        if hasattr(ff, "residues"):
+            residues = [(atom.residue.name, atom.residue.idx) for atom in ff.atoms]
+
         charge_groups = None
         exclusions = ff.nrexcl
         inclusions = None
@@ -368,8 +420,9 @@ class ParmedToFFComponent(TransComponent):
             "nonbonded": nonbonded,
             "exclusions": exclusions,
             "inclusions": inclusions,
-            "defs": names, # or types?
-            "symbols": elements, 
+            "defs": types,  # or names?
+            "symbols": elements,
+            "substructs": residues,
             "atomic_numbers": atomic_numbers,
         }
 
