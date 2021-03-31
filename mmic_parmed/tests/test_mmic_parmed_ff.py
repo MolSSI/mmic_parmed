@@ -35,6 +35,7 @@ def test_parmed_to_ff(top_file, **kwargs):
     return mmic_parmed.components.ParmedToFFComponent.compute(inputs)
 
 
+@pytest.mark.skip(reason="Skip json for now.")
 def test_ff_to_parmed(json_file, **kwargs):
     mm_ff = mm.models.forcefield.mm_ff.ForceField.from_file(json_file)
     inputs = {"schema_object": mm_ff, "kwargs": kwargs}
