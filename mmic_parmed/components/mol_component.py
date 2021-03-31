@@ -72,12 +72,12 @@ class MolToParmedComponent(TransComponent):
                 epsilon14=None,
             )
 
-            if mmol.residues:
-                resname, resnum = mmol.residues[index]
+            if hasattr(mmol, "substructs"):
+                resname, resnum = mmol.substructs[index]
             else:
                 resname, resnum = "UNK", 0
             # classparmed.Residue(name, number=- 1, chain='', insertion_code='', segid='', list=None)[source]
-            pmol.add_atom(atom, resname, resnum + 1, chain="", inscode="", segid="")
+            pmol.add_atom(atom, resname, resnum, chain="", inscode="", segid="")
 
         if mmol.geometry is not None:
             pmol.coordinates = mmol.geometry.reshape(natoms, 3)
@@ -96,11 +96,11 @@ class MolToParmedComponent(TransComponent):
             for (
                 i,
                 j,
-                _,
-            ) in mmol.connectivity:  # _: bond order ... can we use it in ParmEd?
+                order,
+            ) in mmol.connectivity:
                 # pmol.atoms[i].bond_to(pmol.atoms[j])
                 pmol.bonds.append(
-                    parmed.topologyobjects.Bond(pmol.atoms[i], pmol.atoms[j])
+                    parmed.topologyobjects.Bond(pmol.atoms[i], pmol.atoms[j], order)
                 )
                 # both implementations seem to perform almost the same
 
@@ -169,9 +169,7 @@ class ParmedToMolComponent(TransComponent):
             connectivity = None
 
         if hasattr(pmol, "residues"):
-            residues = [
-                (atom.residue.name, atom.residue.idx + 1) for atom in pmol.atoms
-            ]
+            residues = [(atom.residue.name, atom.residue.idx) for atom in pmol.atoms]
 
         input_dict = {
             "atomic_numbers": atomic_nums,
@@ -179,7 +177,7 @@ class ParmedToMolComponent(TransComponent):
             "geometry_units": geo_units,
             "velocities": vel,
             "velocities_units": vel_units,
-            "residues": residues,
+            "substructs": residues,
             "connectivity": connectivity,
             "masses": masses,
             "masses_units": masses_units,
