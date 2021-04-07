@@ -41,21 +41,36 @@ class MolToParmedComponent(TransComponent):
                 mmol.masses, mmol.masses_units, atom_empty.umass.unit.get_symbol()
             )
         else:
-            masses = [0] * natoms
+            masses = None
+
+        if mmol.atom_labels is not None:
+            atom_labels = mmol.atom_labels
+        else:
+            atom_labels = None
+
+        if mmol.atomic_numbers is not None:
+            atomic_numbers = mmol.atomic_numbers
+        else:
+            raise NotImplementedError(
+                "mmic_parmed is supported only for atomic/molecular systems. Molecule.atomic_numbers must be defined."
+            )
 
         for index, symb in enumerate(mmol.symbols):
 
-            name = mmol.atom_labels[index]
+            label = atom_labels[index] if atom_labels is not None else None
             # name = ToolkitMolecule.check_name(name)
-
-            atomic_number = mmol.atomic_numbers[index]
+            atomic_number = (
+                atomic_numbers[index] if atomic_numbers is not None else None
+            )
+            mass = masses[index] if masses is not None else None
 
             # Will likely lose FF-related info ... but then Molecule is not supposed to store any params specific to FFs
             atom = parmed.topologyobjects.Atom(
                 list=None,
                 atomic_number=atomic_number,
-                name=name,
-                mass=masses[index],
+                name=symb,
+                type=label,
+                mass=mass,
                 nb_idx=0,
                 solvent_radius=0.0,
                 screen=0.0,
@@ -72,7 +87,7 @@ class MolToParmedComponent(TransComponent):
                 epsilon14=None,
             )
 
-            if hasattr(mmol, "substructs"):
+            if mmol.substructs:
                 resname, resnum = mmol.substructs[index]
             else:
                 resname, resnum = "UNK", 0
@@ -173,6 +188,7 @@ class ParmedToMolComponent(TransComponent):
 
         input_dict = {
             "atomic_numbers": atomic_nums,
+            "symbols": names,
             "geometry": geo,
             "geometry_units": geo_units,
             "velocities": vel,
@@ -181,7 +197,6 @@ class ParmedToMolComponent(TransComponent):
             "connectivity": connectivity,
             "masses": masses,
             "masses_units": masses_units,
-            "atom_labels": names,
         }
 
         return True, TransOutput(
