@@ -435,6 +435,7 @@ class ParmedToFFComponent(TransComponent):
 
             phase, energy, per, _, _ = zip(*dihedrals_params)
             import numpy
+
             print(numpy.array(per).shape)
 
             unique_dihedrals_type = set(dihedrals_type)
