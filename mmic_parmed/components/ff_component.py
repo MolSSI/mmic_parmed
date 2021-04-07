@@ -180,15 +180,29 @@ class FFToParmedComponent(TransComponent):
         dihedrals = TransComponent.get(mmff, "dihedrals")
         if dihedrals is not None:
             assert (
-                mmff.dihedrals.form == "Harmonic"
-            ), "Only Harmonic potential supported for now"
+                mmff.dihedrals.form == "Charmm"
+            ), "Only Charmm-style potential supported for now"
 
-            for i, j, k, l in mmff.dihedrals.indices:
+            energy = convert(
+                dihedrals.params.energy, dihedrals.params.energy_units, "kcal/mol"
+            )
+            phase = convert(dihedrals.params.phase, dihedrals.phase_units, "degrees")
+            periodicity = dihedrals.params.periodicity
+
+            for di, (i, j, k, l) in enumerate(mmff.dihedrals.indices):
+                dtype = parmed.topologyobjects.DihedralType(
+                    phi_k=energy[di],
+                    per=periodicity[di],
+                    phase=phase[di],
+                    # scee
+                    # scnb
+                )
                 pff.dihedrals.append(
                     parmed.topologyobjects.Dihedral(
                         pff.atoms[i], pff.atoms[j], pff.atoms[k], pff.atoms[l]
                     )
                 )
+                pff.dihedral_types.append(dtype)
 
         return True, TransOutput(proc_input=inputs, data_object=pff)
 
@@ -365,27 +379,42 @@ class ParmedToFFComponent(TransComponent):
         else:
             angles = None
 
-        if False:
-            dihedrals_units = (
-                forcefield.bonded.dihedrals.potentials.harmonic.Harmonic.get_units()
-            )
+        if dihedral:
+            dihedrals_units = forcefield.bonded.dihedrals.potentials.Charmm.get_units()
             dihedrals_units.update(forcefield.bonded.Dihedrals.get_units())
 
             # Why the hell does parmed interpret dihedral.type as a list sometimes? See dialanine.top, last 8 dihedral entries. WEIRD!
             # This is a hack around this
-            dtype = (
-                dihedral.type[0] if isinstance(dihedral.type, list) else dihedral.type
-            )
+            # dihedrals_type = (
+            #    dihedral.type[0] if isinstance(dihedral.type, list) else dihedral.type
+            # )
+
+            dihedrals_type = [di.funct for di in ff.dihedrals if di.funct != 4]
+            # funct == 4: periodic improper dihedralm see https://manual.gromacs.org/documentation/2019/reference-manual/topologies/topology-file-formats.html#tab-topfile2
 
             dihedral_phi_factor = convert(
-                1.0, dtype.uphi_k.unit.get_name(), dihedrals_units["angles_units"]
+                1.0,
+                "kcal/mol",  # dihedrals_type.uphi_k.unit.get_name(),
+                dihedrals_units["energy_units"],
             )
             dihedral_phase_factor = convert(
-                1.0, dtype.uphase.unit.get_name(), dihedrals_units["phases_units"]
+                1.0,
+                "degrees",  # dihedrals_type.uphase.unit.get_name(),
+                dihedrals_units["phase_units"],
             )
 
+            dihedrals_indices = [
+                (
+                    dihedral.atom1.idx,
+                    dihedral.atom2.idx,
+                    dihedral.atom3.idx,
+                    dihedral.atom4.idx,
+                )
+                for dihedral in ff.dihedrals
+            ]
+
             # Need to look into per, scee, and scnb ... their meaning, units, etc.
-            dihedrals = [
+            dihedrals_params = [
                 (
                     dihedral.type[0].phase * dihedral_phase_factor,
                     dihedral.type[0].phi_k * dihedral_phi_factor,
@@ -403,7 +432,31 @@ class ParmedToFFComponent(TransComponent):
                 )
                 for dihedral in ff.dihedrals
             ]
-            dihedrals_type = [dihedral.funct for dihedral in ff.dihedrals]
+
+            phase, energy, per, _, _ = zip(*dihedrals_params)
+            import numpy
+            print(numpy.array(per).shape)
+
+            unique_dihedrals_type = set(dihedrals_type)
+            if len(unique_dihedrals_type) > 1:
+                raise NotImplementedError(
+                    "Multiple dihedral types not yet supported.", unique_dihedrals_type
+                )
+            else:
+                params = forcefield.bonded.dihedrals.potentials.Charmm(
+                    phase=phase,
+                    energy=energy,
+                    periodicity=per,
+                )
+
+            dihedrals = forcefield.bonded.Dihedrals(
+                params=params,
+                angles=angles_,
+                indices=dihedrals_indices,
+                form="Charmm",
+            )
+        else:
+            dihedrals = None
 
         if hasattr(ff, "residues"):
             residues = [(atom.residue.name, atom.residue.idx) for atom in ff.atoms]
