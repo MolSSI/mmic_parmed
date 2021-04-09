@@ -1,4 +1,3 @@
-from mmelemental.models.util.output import FileOutput
 from mmelemental.models import forcefield
 from mmic_translator.models.io import (
     TransInput,

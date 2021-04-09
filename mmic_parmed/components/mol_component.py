@@ -1,4 +1,3 @@
-from mmelemental.models.util.output import FileOutput
 from mmelemental.models.molecule import Molecule
 from typing import Dict, Any, List, Tuple, Optional
 from mmelemental.util.units import convert
