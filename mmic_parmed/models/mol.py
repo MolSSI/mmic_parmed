@@ -92,7 +92,7 @@ class ParmedMol(ToolkitModel):
         out = MolToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
 
-    def to_file(self, filename: str, dtype: str = None, **kwargs):
+    def to_file(self, filename: str, dtype: str = None, mode: str = "w", **kwargs):
         """Writes the molecule to a file.
         Parameters
         ----------
@@ -101,10 +101,17 @@ class ParmedMol(ToolkitModel):
         dtype : Optional[str], optional
             File format
         **kwargs
-            Additional kwargs to pass to the constructors.
+            Additional kwargs to pass to the constructors. kwargs takes precedence over  data.
         """
         if dtype:
-            kwargs["format"] = dtype
+            kwargs["format"] = kwargs.get("format", dtype)
+        if mode == "w":
+            kwargs["overwrite"] = True
+        elif mode == "a":
+            kwargs["overwrite"] = False
+        else:
+            raise NotImplementedError("File write mode can be either 'w' (write) or 'a' (append) for now.")
+
         self.data.save(filename, **kwargs)
 
     def to_schema(self, version: Optional[int] = 0, **kwargs) -> Molecule:
