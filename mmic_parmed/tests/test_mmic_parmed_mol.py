@@ -9,10 +9,9 @@ import sys
 import os
 import parmed
 import mmelemental as mm
+import mm_data
 
-
-data_dir = os.path.join("mmic_parmed", "data")
-top_file = lambda ext: os.path.join(data_dir, "molecules", f"1dzl_fixed.{ext}")
+top_file = lambda ext: mm_data.mols[f"1dzl_fixed.{ext}"]
 
 
 def pytest_generate_tests(metafunc):
