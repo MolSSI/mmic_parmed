@@ -9,19 +9,20 @@ import sys
 import os
 import parmed
 import mmelemental as mm
+import mm_data
+import uuid
 
 
-data_dir = os.path.join("mmic_parmed", "data")
-top_files = lambda ext: os.path.join(data_dir, "forcefields", f"1dzl_gro.{ext}")
-json_files = os.path.join(data_dir, "forcefields", "forcefield-single.json")
+top_files = lambda ext: [mm_data.ffs[f"1dzl_gro.{ext}"], mm_data.ffs[f"alanine.{ext}"]]
+json_files = [mm_data.ffs["forcefield-single.json"]]
 
 
 def pytest_generate_tests(metafunc):
     if "top_file" in metafunc.fixturenames:
-        metafunc.parametrize("top_file", [top_files("top")])
+        metafunc.parametrize("top_file", top_files("top"))
 
     if "json_file" in metafunc.fixturenames:
-        metafunc.parametrize("json_file", [json_files])
+        metafunc.parametrize("json_file", json_files)
 
 
 def test_mmic_parmed_imported():
@@ -43,11 +44,20 @@ def test_ff_to_parmed(json_file, **kwargs):
 
 
 def test_io_methods(top_file):
+
     pff = mmic_parmed.models.ParmedFF.from_file(top_file)
     assert isinstance(pff.data, pff.dtype)
 
-    pff.to_file("ff.psf")
-    os.remove("ff.psf")
+    filename = str(uuid.uuid4())
+    top_filename = filename + ".top"
+
+    pff.to_file(top_filename)
+    # assert filecmp.cmp(top_filename, top_file, shallow=False), f"ff.top != {top_file}"
+    os.remove(top_filename)
+
+    psf_filename = filename + ".psf"
+    pff.to_file(psf_filename)
+    os.remove(psf_filename)
 
     mff = pff.to_schema()
     assert isinstance(mff, mm.models.forcefield.ForceField)
