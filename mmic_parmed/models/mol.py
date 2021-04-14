@@ -110,7 +110,9 @@ class ParmedMol(ToolkitModel):
         elif mode == "a":
             kwargs["overwrite"] = False
         else:
-            raise NotImplementedError("File write mode can be either 'w' (write) or 'a' (append) for now.")
+            raise NotImplementedError(
+                "File write mode can be either 'w' (write) or 'a' (append) for now."
+            )
 
         self.data.save(filename, **kwargs)
 
