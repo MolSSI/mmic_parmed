@@ -10,7 +10,6 @@ import os
 import parmed
 import mmelemental as mm
 import mm_data
-import uuid
 
 
 top_files = lambda ext: [mm_data.ffs[f"1dzl_gro.{ext}"], mm_data.ffs[f"alanine.{ext}"]]
@@ -48,14 +47,13 @@ def test_io_methods(top_file):
     pff = mmic_parmed.models.ParmedFF.from_file(top_file)
     assert isinstance(pff.data, pff.dtype)
 
-    filename = str(uuid.uuid4())
-    top_filename = filename + ".top"
+    top_filename = mm.util.files.random_file(suffix=".top")
 
     pff.to_file(top_filename)
     # assert filecmp.cmp(top_filename, top_file, shallow=False), f"ff.top != {top_file}"
     os.remove(top_filename)
 
-    psf_filename = filename + ".psf"
+    psf_filename = mm.util.files.random_file(suffix=".psf")
     pff.to_file(psf_filename)
     os.remove(psf_filename)
 
