@@ -4,10 +4,9 @@ from mmic_translator.models.io import (
     TransOutput,
 )
 from mmic_translator.components import TransComponent
-from typing import Dict, Any, List, Tuple, Optional
+from typing import List, Tuple, Optional
 from mmelemental.util.units import convert
 import parmed
-from enum import Enum
 
 __all__ = ["FFToParmedComponent", "ParmedToFFComponent"]
 
@@ -45,9 +44,7 @@ class FFToParmedComponent(TransComponent):
         empty_atom = parmed.topologyobjects.Atom()
         mmff = inputs.schema_object
         pff = parmed.structure.Structure()
-        natoms = len(mmff.symbols)
 
-        masses = TransComponent.get(mmff, "masses")
         masses = convert(
             mmff.masses, mmff.masses_units, empty_atom.umass.unit.get_symbol()
         )
@@ -323,11 +320,11 @@ class ParmedToFFComponent(TransComponent):
 
             if len(unique_bonds_type) > 1:
                 raise NotImplementedError("Multiple bond types not yet supported.")
-                params = [
-                    bondTypes.get(btype)(spring=bonds_k[bonds_type == btype])
-                    for btype in unique_bonds_type
-                    if bondTypes.get(btype)
-                ]
+                #params = [
+                #    bondTypes.get(btype)(spring=bonds_k[bonds_type == btype])
+                #    for btype in unique_bonds_type
+                #    if bondTypes.get(btype)
+                #]
             else:
                 params = forcefield.bonded.bonds.potentials.Harmonic(spring=bonds_k)
 
@@ -352,8 +349,8 @@ class ParmedToFFComponent(TransComponent):
             angle_k_factor = convert(
                 1.0, angle.type.uk.unit.get_name(), angles_units["spring_units"]
             )
-            angles_ = [angle.type.theteq for angle in ff.angles]
-            angles_k = [angle.type.k for angle in ff.angles]
+            angles_ = [angle.type.theteq * angle_theta_factor for angle in ff.angles]
+            angles_k = [angle.type.k * angle_k_factor for angle in ff.angles]
             angles_type = [angle.funct for angle in ff.angles]
 
             angles_indices = [
@@ -364,11 +361,11 @@ class ParmedToFFComponent(TransComponent):
             unique_angles_type = set(angles_type)
             if len(unique_angles_type) > 1:
                 raise NotImplementedError("Multiple angle types not yet supported.")
-                params = [
-                    angleTypes.get(btype)(spring=angles_k[angles_type == btype])
-                    for btype in unique_angles_type
-                    if angleTypes.get(btype)
-                ]
+                #params = [
+                #    angleTypes.get(btype)(spring=angles_k[angles_type == btype])
+                #    for btype in unique_angles_type
+                #    if angleTypes.get(btype)
+                #]
             else:
                 params = forcefield.bonded.angles.potentials.Harmonic(spring=angles_k)
 
@@ -433,9 +430,6 @@ class ParmedToFFComponent(TransComponent):
             ]
 
             phase, energy, per, _, _ = zip(*dihedrals_params)
-            import numpy
-
-            print(numpy.array(per).shape)
 
             unique_dihedrals_type = set(dihedrals_type)
             if len(unique_dihedrals_type) > 1:
@@ -461,7 +455,7 @@ class ParmedToFFComponent(TransComponent):
         if hasattr(ff, "residues"):
             residues = [(atom.residue.name, atom.residue.idx) for atom in ff.atoms]
 
-        charge_groups = None
+        #charge_groups = None ... should support charge_groups?
         exclusions = ff.nrexcl
         inclusions = None
 
@@ -470,7 +464,7 @@ class ParmedToFFComponent(TransComponent):
             "charges": charges,
             "bonds": bonds,
             "angles": angles,
-            "dihedrals": None,
+            "dihedrals": dihedrals,
             "im_dihedrals": None,
             "nonbonded": nonbonded,
             "exclusions": exclusions,
