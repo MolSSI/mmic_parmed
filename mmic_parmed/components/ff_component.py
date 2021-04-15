@@ -320,11 +320,11 @@ class ParmedToFFComponent(TransComponent):
 
             if len(unique_bonds_type) > 1:
                 raise NotImplementedError("Multiple bond types not yet supported.")
-                #params = [
+                # params = [
                 #    bondTypes.get(btype)(spring=bonds_k[bonds_type == btype])
                 #    for btype in unique_bonds_type
                 #    if bondTypes.get(btype)
-                #]
+                # ]
             else:
                 params = forcefield.bonded.bonds.potentials.Harmonic(spring=bonds_k)
 
@@ -361,11 +361,11 @@ class ParmedToFFComponent(TransComponent):
             unique_angles_type = set(angles_type)
             if len(unique_angles_type) > 1:
                 raise NotImplementedError("Multiple angle types not yet supported.")
-                #params = [
+                # params = [
                 #    angleTypes.get(btype)(spring=angles_k[angles_type == btype])
                 #    for btype in unique_angles_type
                 #    if angleTypes.get(btype)
-                #]
+                # ]
             else:
                 params = forcefield.bonded.angles.potentials.Harmonic(spring=angles_k)
 
@@ -455,7 +455,7 @@ class ParmedToFFComponent(TransComponent):
         if hasattr(ff, "residues"):
             residues = [(atom.residue.name, atom.residue.idx) for atom in ff.atoms]
 
-        #charge_groups = None ... should support charge_groups?
+        # charge_groups = None ... should support charge_groups?
         exclusions = ff.nrexcl
         inclusions = None
 

@@ -118,7 +118,7 @@ class MolToParmedComponent(TransComponent):
                 )
                 # both implementations seem to perform almost the same
 
-        #if mmol.angles:
+        # if mmol.angles:
         #    for i, j, k in mmol.angles:
         #        pmol.angles.append(
         #            parmed.topologyobjects.Angle(
@@ -126,7 +126,7 @@ class MolToParmedComponent(TransComponent):
         #            )
         #        )
 
-        #if mmol.dihedrals:
+        # if mmol.dihedrals:
         #    for i, j, k, l in mmol.dihedrals:
         #        pmol.dihedrals.append(
         #            parmed.topologyobjects.Dihedral(
@@ -134,9 +134,7 @@ class MolToParmedComponent(TransComponent):
         #            )
         #        )
 
-        return True, TransOutput(
-            proc_input=inputs, data_object=pmol
-        )
+        return True, TransOutput(proc_input=inputs, data_object=pmol)
 
 
 class ParmedToMolComponent(TransComponent):
