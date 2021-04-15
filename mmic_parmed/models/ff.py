@@ -1,4 +1,3 @@
-from pydantic import Field, validator
 from typing import Dict, Any, Optional
 from mmic_translator.models.base import ToolkitModel
 from mmelemental.models.forcefield.mm_ff import ForceField
