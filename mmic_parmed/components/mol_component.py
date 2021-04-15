@@ -170,6 +170,7 @@ class ParmedToMolComponent(TransComponent):
 
         atomic_nums = [atom.atomic_number for atom in pmol.atoms]
         names = [atom.name for atom in pmol.atoms]
+        element_names = [atom.element_name for atom in pmol.atoms]
 
         masses = [atom.mass for atom in pmol.atoms]
         masses_units = pmol.atoms[0].umass.unit.get_name()
@@ -187,7 +188,8 @@ class ParmedToMolComponent(TransComponent):
 
         input_dict = {
             "atomic_numbers": atomic_nums,
-            "symbols": names,
+            "symbols": element_names,
+            "atom_labels": names,
             "geometry": geo,
             "geometry_units": geo_units,
             "velocities": vel,
