@@ -118,25 +118,25 @@ class MolToParmedComponent(TransComponent):
                 )
                 # both implementations seem to perform almost the same
 
-        if mmol.angles:
-            for i, j, k in mmol.angles:
-                pmol.angles.append(
-                    parmed.topologyobjects.Angle(
-                        pmol.atoms[i], pmol.atoms[j], pmol.atoms[k]
-                    )
-                )
+        #if mmol.angles:
+        #    for i, j, k in mmol.angles:
+        #        pmol.angles.append(
+        #            parmed.topologyobjects.Angle(
+        #                pmol.atoms[i], pmol.atoms[j], pmol.atoms[k]
+        #            )
+        #        )
 
-        if mmol.dihedrals:
-            for i, j, k, l in mmol.dihedrals:
-                pmol.dihedrals.append(
-                    parmed.topologyobjects.Dihedral(
-                        pmol.atoms[i], pmol.atoms[j], pmol.atoms[k], pmol.atoms[l]
-                    )
-                )
+        #if mmol.dihedrals:
+        #    for i, j, k, l in mmol.dihedrals:
+        #        pmol.dihedrals.append(
+        #            parmed.topologyobjects.Dihedral(
+        #                pmol.atoms[i], pmol.atoms[j], pmol.atoms[k], pmol.atoms[l]
+        #            )
+        #        )
 
         return True, TransOutput(
             proc_input=inputs, data_object=pmol
-        )  # need to include velocity units, make a PR?
+        )
 
 
 class ParmedToMolComponent(TransComponent):
