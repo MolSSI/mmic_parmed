@@ -20,6 +20,7 @@ angleTypes = {
 }
 
 # Need to fix: fudgeLJ, fudgeQQ
+# Need to handle dihedrals properly
 
 
 class FFToParmedComponent(TransComponent):
@@ -141,7 +142,9 @@ class FFToParmedComponent(TransComponent):
                     order,
                 ),
             ) in enumerate(mmff.bonds.indices):
-                btype = parmed.topologyobjects.BondType(k=spring[bi], req=req[bi])
+                btype = parmed.topologyobjects.BondType(
+                    k=spring[bi], req=req[bi], list=pff.bond_types
+                )
                 pff.bonds.append(
                     parmed.topologyobjects.Bond(
                         pff.atoms[i], pff.atoms[j], order=order, type=btype
@@ -165,7 +168,7 @@ class FFToParmedComponent(TransComponent):
 
             for ai, (i, j, k) in enumerate(mmff.angles.indices):
                 atype = parmed.topologyobjects.AngleType(
-                    k=spring[ai], theteq=angles_eq[ai]
+                    k=spring[ai], theteq=angles_eq[ai], list=pff.angle_types
                 )
                 pff.angles.append(
                     parmed.topologyobjects.Angle(
@@ -196,10 +199,20 @@ class FFToParmedComponent(TransComponent):
                     phase=phase[di],
                     # scee
                     # scnb
+                    list=pff.dihedral_types,
                 )
+                # assert:
+                # dtype.funct = (
+                #    9  # hackish: assume all dihedrals are proper and charmm-style
+                # )
                 pff.dihedrals.append(
                     parmed.topologyobjects.Dihedral(
-                        pff.atoms[i], pff.atoms[j], pff.atoms[k], pff.atoms[l]
+                        pff.atoms[i],
+                        pff.atoms[j],
+                        pff.atoms[k],
+                        pff.atoms[l],
+                        improper=False,
+                        type=dtype,
                     )
                 )
                 pff.dihedral_types.append(dtype)
