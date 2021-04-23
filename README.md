@@ -9,10 +9,10 @@ This is part of the [MolSSI](http://molssi.org) Molecular Mechanics Interoperabl
 
 ![image](mmic_parmed/data/imgs/component.png)
 
-# Basic API
-**mmic_parmed** provides 4 classes of translators for: molecules, trajectories, simulation, and forcefields.
+# API
+**mmic_parmed** provides 4 classes of translators for: molecules, forcefields, trajectories (incomplete), and simulation (incomplete).
 
-## Molecules
+## Models
 ```python
 from mmic_parmed.models import ParmedMol
 
@@ -23,8 +23,7 @@ pa_mol = ParmedMol.from_schema(mm_mol) -> parmed.structure.Structure
 mm_mol = ParmedMol.to_schema(pa_mol) -> mmelemental.models.molecule.Molecule
 
 ```
-# Under the hood
-## Molecules
+## Components
 The `from_schema` and `to_schema` methods in the `ParmedMol` model use translation components provided by **mmic_parmed** and **MMElemental** to convert between MMSchema and ParmEd.
 
 ```python
@@ -35,21 +34,38 @@ from mmelemental.models.molecule import Molecule
 
 ### MMSchema to ParmEd molecule
 ```python
-# Creating MMSchema molecule
+# Create MMSchema molecule
 mm_mol = Molecule.from_file(path_to_file)
 
-# Running translator compute
-pa_mol = MolToParmedComponent.compute(mm_mol)
+# Create translation input
+inp = {
+    "schema_object": mm_mol,
+    "schema_version": 1,
+}
+
+# Run translator compute
+outp = MolToParmedComponent.compute(inp)
+
+# Extract parmed structure
+pa_mol = outp.data_object.data
 ```
 
 ### ParmEd to MMSchema molecule
 ```python
-# Creating ParmEd input
+# Create ParmEd input
 pa_struct = parmed.load_file(path_to_file)
 pa_mol = mmic_parmed.models.ParmedMol(mol=pa_struct)
 
+# Create translation input
+inp = {
+    "data_object": pa_mol
+}
+
 # Running translator compute
-mm_mol = Translator.compute(pa_mol)
+outp = Translator.compute(inp)
+
+# Extract MMSchema molecule
+mm_mol = outp.schema_object
 ```
 
 
