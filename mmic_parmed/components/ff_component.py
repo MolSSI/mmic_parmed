@@ -115,7 +115,9 @@ class FFToParmedComponent(TransComponent):
             if residues:
                 resname, resnum = residues[index]
             else:
-                raise NotImplementedError("Residues must be supplied for forcefields based on atom typing.")
+                raise NotImplementedError(
+                    "Residues must be supplied for forcefields based on atom typing."
+                )
 
             pff.add_atom(atom, resname, resnum, chain="", inscode="", segid="")
 
@@ -182,7 +184,9 @@ class FFToParmedComponent(TransComponent):
             energy = convert(
                 dihedrals.params.energy, dihedrals.params.energy_units, "kcal/mol"
             )
-            phase = convert(dihedrals.params.phase, dihedrals.params.phase_units, "degrees")
+            phase = convert(
+                dihedrals.params.phase, dihedrals.params.phase_units, "degrees"
+            )
             periodicity = dihedrals.params.periodicity
 
             for di, (i, j, k, l) in enumerate(mmff.dihedrals.indices):
