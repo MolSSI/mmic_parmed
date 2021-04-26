@@ -33,7 +33,7 @@ im_dihedral_types = {
 
 
 class FFToParmedComponent(TransComponent):
-    """ A component for converting Molecule to ParmEd molecule object. """
+    """A component for converting Molecule to ParmEd molecule object."""
 
     def execute(
         self,
@@ -271,7 +271,7 @@ class FFToParmedComponent(TransComponent):
 
 
 class ParmedToFFComponent(TransComponent):
-    """ A component for converting ParmEd molecule to Molecule object. """
+    """A component for converting ParmEd molecule to Molecule object."""
 
     def execute(
         self,

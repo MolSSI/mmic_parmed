@@ -12,16 +12,16 @@ __all__ = ["ParmedMol"]
 
 
 class ParmedMol(ToolkitModel):
-    """ A model for ParmEd.Universe storing an MM molecule. """
+    """A model for ParmEd.Universe storing an MM molecule."""
 
     @property
     def dtype(self):
-        """ Returns the fundamental molecule object type. """
+        """Returns the fundamental molecule object type."""
         return parmed.structure.Structure
 
     @classmethod
     def isvalid(cls, data):
-        """ Makes sure the Structure object stores atoms. """
+        """Makes sure the Structure object stores atoms."""
         if hasattr(data, "atoms"):
             if len(data.atoms):
                 return data

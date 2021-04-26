@@ -13,7 +13,7 @@ __all__ = ["MolToParmedComponent", "ParmedToMolComponent"]
 
 
 class MolToParmedComponent(TransComponent):
-    """ A component for converting Molecule to ParmEd molecule object. """
+    """A component for converting Molecule to ParmEd molecule object."""
 
     def execute(
         self,
@@ -138,7 +138,7 @@ class MolToParmedComponent(TransComponent):
 
 
 class ParmedToMolComponent(TransComponent):
-    """ A component for converting ParmEd molecule to Molecule object. """
+    """A component for converting ParmEd molecule to Molecule object."""
 
     def execute(
         self,
