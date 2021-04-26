@@ -13,7 +13,7 @@ import mm_data
 
 
 top_files = lambda ext: [mm_data.ffs[f"1dzl_gro.{ext}"], mm_data.ffs[f"alanine.{ext}"]]
-json_files = [mm_data.ffs["alanine.json"]]
+json_files = [mm_data.ffs["water-ff.json"]]  # "alanine.json"]]
 
 
 def pytest_generate_tests(metafunc):
