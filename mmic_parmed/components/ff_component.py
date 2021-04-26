@@ -5,22 +5,31 @@ from mmic_translator.models.io import (
 )
 from mmic_translator.components import TransComponent
 from typing import List, Tuple, Optional
+from collections.abc import Iterable
 from mmelemental.util.units import convert
 import parmed
 
 __all__ = ["FFToParmedComponent", "ParmedToFFComponent"]
 
-bondTypes = {
+bond_types = {
     1: forcefield.bonded.bonds.potentials.Harmonic,
     2: forcefield.bonded.bonds.potentials.Gromos96,
 }
 
-angleTypes = {
+angle_types = {
     1: forcefield.bonded.angles.potentials.Harmonic,
 }
 
+dihedral_types = {
+    1: forcefield.bonded.dihedrals.potentials.Charmm,
+    9: forcefield.bonded.dihedrals.potentials.CharmmMulti,
+}
+
+im_dihedral_types = {
+    4: ...,
+}
+
 # Need to fix: fudgeLJ, fudgeQQ
-# Need to handle dihedrals properly
 
 
 class FFToParmedComponent(TransComponent):
@@ -58,7 +67,7 @@ class FFToParmedComponent(TransComponent):
         atomic_numbers = TransComponent.get(mmff, "atomic_numbers")
         atom_types = TransComponent.get(mmff, "defs")
 
-        rmin, epsilon = self.get_nonbonded(mmff, empty_atom)
+        rmin, epsilon = self._get_nonbonded(mmff, empty_atom)
 
         for index, symb in enumerate(mmff.symbols):
 
@@ -180,9 +189,13 @@ class FFToParmedComponent(TransComponent):
         # Dihedrals
         dihedrals = TransComponent.get(mmff, "dihedrals")
         if dihedrals is not None:
+            dihedrals = (
+                dihedrals.pop() if isinstance(dihedrals, list) else dihedrals
+            )  # For now, keep track of only a single type
+            # Need to change this ASAP! Must take multiple types into account!
             assert (
-                mmff.dihedrals.form == "Charmm"
-            ), "Only Charmm-style potential supported for now"
+                dihedrals.form == "Charmm" or dihedrals.form == "CharmmMulti"
+            ), "Only Charmm-style potentials supported for now"
 
             energy = convert(
                 dihedrals.params.energy, dihedrals.params.energy_units, "kcal/mol"
@@ -192,15 +205,28 @@ class FFToParmedComponent(TransComponent):
             )
             periodicity = dihedrals.params.periodicity
 
-            for di, (i, j, k, l) in enumerate(mmff.dihedrals.indices):
-                dtype = parmed.topologyobjects.DihedralType(
-                    phi_k=energy[di],
-                    per=periodicity[di],
-                    phase=phase[di],
-                    # scee
-                    # scnb
-                    list=pff.dihedral_types,
-                )
+            for di, (i, j, k, l) in enumerate(dihedrals.indices):
+                if isinstance(energy[di], Iterable):
+                    dtype = [
+                        parmed.topologyobjects.DihedralType(
+                            phi_k=energy[di][dj],
+                            per=periodicity[di][dj],
+                            phase=phase[di][dj],
+                            # scee,
+                            # scnb,
+                            list=pff.dihedral_types,
+                        )
+                        for dj in range(len(energy[di]))
+                    ]
+                else:
+                    dtype = parmed.topologyobjects.DihedralType(
+                        phi_k=energy[di],
+                        per=periodicity[di],
+                        phase=phase[di],
+                        # scee
+                        # scnb
+                        list=pff.dihedral_types,
+                    )
                 # assert:
                 # dtype.funct = (
                 #    9  # hackish: assume all dihedrals are proper and charmm-style
@@ -219,7 +245,7 @@ class FFToParmedComponent(TransComponent):
 
         return True, TransOutput(proc_input=inputs, data_object=pff)
 
-    def get_nonbonded(
+    def _get_nonbonded(
         self,
         mmff: forcefield.ForceField,
         empty_atom: parmed.topologyobjects.Atom,
@@ -338,12 +364,16 @@ class ParmedToFFComponent(TransComponent):
             if len(unique_bonds_type) > 1:
                 raise NotImplementedError("Multiple bond types not yet supported.")
                 # params = [
-                #    bondTypes.get(btype)(spring=bonds_k[bonds_type == btype])
+                #    bond_types.get(btype)(spring=bonds_k[bonds_type == btype])
                 #    for btype in unique_bonds_type
-                #    if bondTypes.get(btype)
+                #    if bond_types.get(btype)
                 # ]
             else:
-                params = forcefield.bonded.bonds.potentials.Harmonic(spring=bonds_k)
+                bond_funct = unique_bonds_type.pop()
+                assert (
+                    bond_funct == 1
+                ), "Only Harmonic bond potentials supported in mmic_parmed."
+                params = bond_types.get(bond_funct)(spring=bonds_k)
 
             bonds = forcefield.bonded.Bonds(
                 params=params,
@@ -384,7 +414,11 @@ class ParmedToFFComponent(TransComponent):
                 #    if angleTypes.get(btype)
                 # ]
             else:
-                params = forcefield.bonded.angles.potentials.Harmonic(spring=angles_k)
+                angle_funct = unique_angles_type.pop()
+                assert (
+                    angle_funct == 1
+                ), "Only Harmonic angle potentials supported in mmic_parmed."
+                params = angle_types.get(angle_funct)(spring=angles_k)
 
             angles = forcefield.bonded.Angles(
                 params=params, angles=angles_, indices=angles_indices, form="Harmonic"
@@ -393,79 +427,12 @@ class ParmedToFFComponent(TransComponent):
             angles = None
 
         if dihedral:
-            dihedrals_units = forcefield.bonded.dihedrals.potentials.Charmm.get_units()
-            dihedrals_units.update(forcefield.bonded.Dihedrals.get_units())
+            dihedrals_funct = set([di.funct for di in ff.dihedrals if di.funct != 4])
+            # funct == 4: periodic improper dihedrals see https://manual.gromacs.org/documentation/2019/reference-manual/topologies/topology-file-formats.html#tab-topfile2
+            dihedrals = [self._get_dihedrals(funct, ff) for funct in dihedrals_funct]
 
-            # Why the hell does parmed interpret dihedral.type as a list sometimes? See dialanine.top, last 8 dihedral entries. WEIRD!
-            # This is a hack around this
-            # dihedrals_type = (
-            #    dihedral.type[0] if isinstance(dihedral.type, list) else dihedral.type
-            # )
-
-            dihedrals_type = [di.funct for di in ff.dihedrals if di.funct != 4]
-            # funct == 4: periodic improper dihedralm see https://manual.gromacs.org/documentation/2019/reference-manual/topologies/topology-file-formats.html#tab-topfile2
-
-            dihedral_phi_factor = convert(
-                1.0,
-                "kcal/mol",  # dihedrals_type.uphi_k.unit.get_name(),
-                dihedrals_units["energy_units"],
-            )
-            dihedral_phase_factor = convert(
-                1.0,
-                "degrees",  # dihedrals_type.uphase.unit.get_name(),
-                dihedrals_units["phase_units"],
-            )
-
-            dihedrals_indices = [
-                (
-                    dihedral.atom1.idx,
-                    dihedral.atom2.idx,
-                    dihedral.atom3.idx,
-                    dihedral.atom4.idx,
-                )
-                for dihedral in ff.dihedrals
-            ]
-
-            # Need to look into per, scee, and scnb ... their meaning, units, etc.
-            dihedrals_params = [
-                (
-                    dihedral.type[0].phase * dihedral_phase_factor,
-                    dihedral.type[0].phi_k * dihedral_phi_factor,
-                    dihedral.type[0].per,
-                    dihedral.type[0].scee,
-                    dihedral.type[0].scnb,
-                )
-                if isinstance(dihedral.type, list)
-                else (
-                    dihedral.type.phase * dihedral_phase_factor,
-                    dihedral.type.phi_k * dihedral_phi_factor,
-                    dihedral.type.per,
-                    dihedral.type.scee,
-                    dihedral.type.scnb,
-                )
-                for dihedral in ff.dihedrals
-            ]
-
-            phase, energy, per, _, _ = zip(*dihedrals_params)
-
-            unique_dihedrals_type = set(dihedrals_type)
-            if len(unique_dihedrals_type) > 1:
-                raise NotImplementedError(
-                    "Multiple dihedral types not yet supported.", unique_dihedrals_type
-                )
-            else:
-                params = forcefield.bonded.dihedrals.potentials.Charmm(
-                    phase=phase,
-                    energy=energy,
-                    periodicity=per,
-                )
-
-            dihedrals = forcefield.bonded.Dihedrals(
-                params=params,
-                angles=angles_,
-                indices=dihedrals_indices,
-                form="Charmm",
-            )
+            if len(dihedrals) == 1:  # no point in keeping a list for single-type
+                dihedrals = dihedrals.pop()
         else:
             dihedrals = None
 
@@ -494,3 +461,74 @@ class ParmedToFFComponent(TransComponent):
 
         ff = forcefield.ForceField(**input_dict)
         return True, TransOutput(proc_input=inputs, schema_object=ff)
+
+    def _get_dihedrals(self, funct, ff):
+
+        assert dihedral_types.get(
+            funct
+        ), f"Functional form {funct} not supported in mmic_parmed"
+
+        dihedrals_units = dihedral_types[funct].get_units()  # model param units
+        dihedrals_units.update(
+            forcefield.bonded.Dihedrals.get_units()
+        )  # global param units
+
+        dihedral_phi_factor = convert(
+            1.0,
+            "kcal/mol",  # dihedrals_type.uphi_k.unit.get_name(),
+            dihedrals_units["energy_units"],
+        )
+        dihedral_phase_factor = convert(
+            1.0,
+            "degrees",  # dihedrals_type.uphase.unit.get_name(),
+            dihedrals_units["phase_units"],
+        )
+        dihedrals_indices = [
+            (
+                dihedral.atom1.idx,
+                dihedral.atom2.idx,
+                dihedral.atom3.idx,
+                dihedral.atom4.idx,
+            )
+            for dihedral in ff.dihedrals
+        ]
+
+        # Need to look into per, scee, and scnb ... their meaning, units, etc.
+        if funct == 9:  # multi-dihedrals ... special case
+            phase, energy, per = [], [], []
+            for dihedral in ff.dihedrals:
+                if dihedral.funct == funct:
+                    phase.append(
+                        [item.phase * dihedral_phase_factor for item in dihedral.type]
+                    )
+                    energy.append(
+                        [item.phi_k * dihedral_phi_factor for item in dihedral.type]
+                    )
+                    per.append([item.per for item in dihedral.type])
+        else:
+            dihedrals_params = [
+                [
+                    (
+                        dihedral.type.phase * dihedral_phase_factor,
+                        dihedral.type.phi_k * dihedral_phi_factor,
+                        dihedral.type.per,
+                        dihedral.type.scee,
+                        dihedral.type.scnb,
+                    )
+                ]
+                for dihedral in ff.dihedrals
+                if dihedral.funct == funct
+            ]
+            phase, energy, per, _, _ = zip(*dihedrals_params)
+
+        params = dihedral_types.get(funct)(
+            phase=phase,
+            energy=energy,
+            periodicity=per,
+        )
+
+        return forcefield.bonded.Dihedrals(
+            params=params,
+            indices=dihedrals_indices,
+            form=dihedral_types.get(funct).__name__,
+        )
