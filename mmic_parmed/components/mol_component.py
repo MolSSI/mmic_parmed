@@ -67,7 +67,7 @@ class MolToParmedComponent(TransComponent):
             atom = parmed.topologyobjects.Atom(
                 list=None,
                 atomic_number=atomic_number,
-                name=label, #do not use symb?,
+                name=label,  # do not use symb?,
                 type=label,
                 mass=mass,
                 nb_idx=0,
