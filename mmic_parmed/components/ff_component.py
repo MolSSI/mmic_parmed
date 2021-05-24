@@ -449,7 +449,6 @@ class ParmedToFFComponent(TransComponent):
             "bonds": bonds,
             "angles": angles,
             "dihedrals": dihedrals,
-            "im_dihedrals": None,
             "nonbonded": nonbonded,
             "exclusions": exclusions,
             "inclusions": inclusions,
