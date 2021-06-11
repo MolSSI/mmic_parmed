@@ -31,6 +31,11 @@ class MolToParmedComponent(TransComponent):
             inputs = self.input()(**inputs)
 
         mmol = inputs.schema_object
+        ndim = mmol.ndim
+
+        if ndim != 3:
+            raise NotImplementedError("mmic_parmed supports only 3D molecules.")
+
         pmol = parmed.structure.Structure()
         natoms = len(mmol.symbols)
         atom_empty = parmed.topologyobjects.Atom()
@@ -94,14 +99,14 @@ class MolToParmedComponent(TransComponent):
             pmol.add_atom(atom, resname, resnum, chain="", inscode="", segid="")
 
         if mmol.geometry is not None:
-            pmol.coordinates = mmol.geometry.reshape(natoms, 3)
+            pmol.coordinates = mmol.geometry.reshape(natoms, ndim)
             pmol.coordinates = convert(
                 pmol.coordinates, mmol.geometry_units, pmol.positions.unit.get_name()
             )
 
         if mmol.velocities is not None:
             units_speed = "angstrom/picosecond"  # hard-coded in parmed 3.4.0
-            pmol.velocities = mmol.velocities.reshape(natoms, 3)
+            pmol.velocities = mmol.velocities.reshape(natoms, ndim)
             pmol.velocities = convert(
                 pmol.velocities, mmol.velocities_units, units_speed
             )
