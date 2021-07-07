@@ -11,12 +11,13 @@ import parmed
 import mmelemental as mm
 import mm_data
 
-top_file = lambda ext: mm_data.mols[f"1dzl_fixed.{ext}"]
+cfile = lambda ext: mm_data.mols[f"1dzl_fixed.{ext}"]
+exts = ["pdb", "gro"]
 
 
 def pytest_generate_tests(metafunc):
     if "file" in metafunc.fixturenames:
-        metafunc.parametrize("file", [top_file("pdb"), top_file("gro")])
+        metafunc.parametrize("file", [cfile(ext) for ext in exts])
 
 
 def test_mmic_parmed_imported():
