@@ -22,12 +22,27 @@ molread_ext_maps = {
     ".sdf": "sdf",
     ".mol": "mol",
     ".mol2": "mol2",
+    ".inpcrd": "inpcrd",
 }
 
-molwrite_ext_maps = {".gro": "gro", ".pdb": "pdb"}
+molwrite_ext_maps = {
+    ".gro": "gro",
+    ".pdb": "pdb",
+    ".inpcrd": "inpcrd",
+}
 
-ffread_ext_maps = {".psf": "psf", ".top": "top", ".prm": "prm"}
-ffwrite_ext_maps = {".psf": "psf", ".top": "top", ".prm": "prm"}
+ffread_ext_maps = {
+    ".psf": "psf",
+    ".top": "top",
+    ".prm": "prm",
+    ".prmtop": "prmtop",
+}
+ffwrite_ext_maps = {
+    ".psf": "psf",
+    ".top": "top",
+    ".prm": "prm",
+    ".prmtop": "prmtop",
+}
 
 _classes_map = {
     "Molecule": models.ParmedMol,
