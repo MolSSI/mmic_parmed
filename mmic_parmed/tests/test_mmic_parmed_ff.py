@@ -12,7 +12,10 @@ import mmelemental as mm
 import mm_data
 
 
-top_files = lambda ext: [mm_data.ffs[f"1dzl_gro.{ext}"], mm_data.ffs[f"alanine.{ext}"]]
+top_files = lambda ext: [
+    mm_data.ffs[f"1dzl_gro.{ext}"],
+    mm_data.ffs[f"dialanine.{ext}"],
+]
 json_files = [mm_data.ffs["water-ff.json"]]  # "alanine.json"]]
 
 
