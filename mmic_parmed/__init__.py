@@ -49,3 +49,9 @@ _classes_map = {
     # "Trajectory": models.ParmedTraj,
     "ForceField": models.ParmedFF,
 }
+
+provenance_stamp = {
+    "creator": "mmic_parmed",
+    "version": __version__,
+    "routine": __name__,
+}
