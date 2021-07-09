@@ -99,7 +99,11 @@ class ParmedFF(ToolkitModel):
         **kwargs
             Additional kwargs to pass to the constructor.
         """
-        inputs = {"data_object": self.data, "schema_version": version, "kwargs": kwargs}
+        inputs = {
+            "data_object": self.data,
+            "schema_version": version,
+            "keywords": kwargs,
+        }
         out = ParmedToFFComponent.compute(inputs)
         if version:
             assert version == out.schema_version

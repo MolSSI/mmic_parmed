@@ -34,13 +34,13 @@ def test_mmic_parmed_imported():
 
 def test_parmed_to_ff(top_file, **kwargs):
     ff = parmed.load_file(top_file)
-    inputs = {"data_object": ff, "kwargs": kwargs}
+    inputs = {"data_object": ff, "keywords": kwargs}
     return mmic_parmed.components.ParmedToFFComponent.compute(inputs)
 
 
 def test_ff_to_parmed(json_file, **kwargs):
     mm_ff = mm.models.forcefield.mm_ff.ForceField.from_file(json_file)
-    inputs = {"schema_object": mm_ff, "kwargs": kwargs}
+    inputs = {"schema_object": mm_ff, "keywords": kwargs}
     return mmic_parmed.components.FFToParmedComponent.compute(inputs)
 
 

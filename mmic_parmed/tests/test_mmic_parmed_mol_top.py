@@ -31,7 +31,7 @@ def test_mmic_parmed_imported():
 
 def test_parmed_to_mol(cfile, ffile, **kwargs):
     struct = parmed.load_file(filename=ffile, xyz=cfile)
-    inputs = {"data_object": struct, "kwargs": kwargs}
+    inputs = {"data_object": struct, "keywords": kwargs}
     return mmic_parmed.components.ParmedToMolComponent.compute(inputs)
 
 
