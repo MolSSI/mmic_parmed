@@ -1,13 +1,20 @@
 from mmelemental.models import forcefield
-from mmic_translator.models.io import (
+from mmic_translator import (
     TransInput,
     TransOutput,
+    __version__,
 )
 from mmic_translator.components import TransComponent
 from typing import List, Tuple, Optional
 from collections.abc import Iterable
 from mmelemental.util.units import convert
 import parmed
+
+provenance_stamp = {
+    "creator": "mmic_parmed",
+    "version": __version__,
+    "routine": __name__,
+}
 
 __all__ = ["FFToParmedComponent", "ParmedToFFComponent"]
 
@@ -243,7 +250,12 @@ class FFToParmedComponent(TransComponent):
                 )
                 pff.dihedral_types.append(dtype)
 
-        return True, TransOutput(proc_input=inputs, data_object=pff)
+        return True, TransOutput(
+            proc_input=inputs,
+            data_object=pff,
+            success=True,
+            provenance=provenance_stamp,
+        )
 
     def _get_nonbonded(
         self,
@@ -459,7 +471,12 @@ class ParmedToFFComponent(TransComponent):
         }
 
         ff = forcefield.ForceField(**input_dict)
-        return True, TransOutput(proc_input=inputs, schema_object=ff)
+        return True, TransOutput(
+            proc_input=inputs,
+            schema_object=ff,
+            success=True,
+            provenance=provenance_stamp,
+        )
 
     def _get_dihedrals(self, funct, ff):
 

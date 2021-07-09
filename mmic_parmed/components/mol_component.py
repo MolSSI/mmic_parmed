@@ -7,7 +7,14 @@ from mmic_translator import (
     TransComponent,
     TransInput,
     TransOutput,
+    __version__,
 )
+
+provenance_stamp = {
+    "creator": "mmic_parmed",
+    "version": __version__,
+    "routine": __name__,
+}
 
 __all__ = ["MolToParmedComponent", "ParmedToMolComponent"]
 
@@ -139,7 +146,12 @@ class MolToParmedComponent(TransComponent):
         #            )
         #        )
 
-        return True, TransOutput(proc_input=inputs, data_object=pmol)
+        return True, TransOutput(
+            proc_input=inputs,
+            data_object=pmol,
+            success=True,
+            provenance=provenance_stamp,
+        )
 
 
 class ParmedToMolComponent(TransComponent):
@@ -204,5 +216,8 @@ class ParmedToMolComponent(TransComponent):
         }
 
         return True, TransOutput(
-            proc_input=inputs, schema_object=Molecule(**input_dict)
+            proc_input=inputs,
+            schema_object=Molecule(**input_dict),
+            success=True,
+            provenance=provenance_stamp,
         )
