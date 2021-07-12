@@ -43,7 +43,7 @@ def test_mol_to_parmed(cfile, ffile):
 
 def test_io_methods(cfile, ffile):
     pmol = mmic_parmed.models.ParmedMol.from_file(cfile, ffile)
-    assert isinstance(pmol.data, pmol.dtype)
+    assert isinstance(pmol.data, pmol.dtype())
 
     mmol = pmol.to_schema()
     assert isinstance(mmol, mm.models.molecule.Molecule)

@@ -47,7 +47,7 @@ def test_ff_to_parmed(json_file, **kwargs):
 def test_io_methods(top_file):
 
     pff = mmic_parmed.models.ParmedFF.from_file(top_file)
-    assert isinstance(pff.data, pff.dtype)
+    assert isinstance(pff.data, pff.dtype())
 
     top_filename = mm.util.files.random_file(suffix=".top")
 
