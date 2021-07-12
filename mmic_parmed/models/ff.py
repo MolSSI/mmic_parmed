@@ -11,11 +11,15 @@ __all__ = ["ParmedFF"]
 
 
 class ParmedFF(ToolkitModel):
-    """A model for ParmEd.Universe storing an MM molecule."""
+    """A model for ParmEd Structure storing FF object."""
 
-    @property
-    def dtype(self):
-        """Returns the fundamental molecule object type."""
+    @classmethod
+    def engine(cls):
+        return "parmed", parmed.__version__
+
+    @classmethod
+    def dtype(cls):
+        """Returns the fundamental FF object type."""
         return parmed.structure.Structure
 
     @classmethod
