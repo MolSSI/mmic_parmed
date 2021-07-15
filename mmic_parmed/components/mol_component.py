@@ -147,6 +147,8 @@ class MolToParmedComponent(TransComponent):
         #        )
 
         return True, TransOutput(
+            schema_version=inputs.schema_version,
+            schema_name="mmel_output",
             proc_input=inputs,
             data_object=pmol,
             success=True,
@@ -216,6 +218,8 @@ class ParmedToMolComponent(TransComponent):
         }
 
         return True, TransOutput(
+            schema_version=inputs.schema_version,
+            schema_name="mmel_output",
             proc_input=inputs,
             schema_object=Molecule(**input_dict),
             success=True,

@@ -251,6 +251,8 @@ class FFToParmedComponent(TransComponent):
                 pff.dihedral_types.append(dtype)
 
         return True, TransOutput(
+            schema_version=1,
+            schema_name="mmel_output",
             proc_input=inputs,
             data_object=pff,
             success=True,
@@ -472,6 +474,8 @@ class ParmedToFFComponent(TransComponent):
 
         ff = forcefield.ForceField(**input_dict)
         return True, TransOutput(
+            schema_version=inputs.schema_version,
+            schema_name="mmel_output",
             proc_input=inputs,
             schema_object=ff,
             success=True,

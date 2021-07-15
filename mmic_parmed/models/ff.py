@@ -75,6 +75,7 @@ class ParmedFF(ToolkitModel):
         inputs = {
             "schema_object": data,
             "schema_version": version or data.schema_version,
+            "schema_name": "mmel_input",
         }
         out = FFToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
@@ -106,6 +107,7 @@ class ParmedFF(ToolkitModel):
         inputs = {
             "data_object": self.data,
             "schema_version": version,
+            "schema_name": "mmel_input",
             "keywords": kwargs,
         }
         out = ParmedToFFComponent.compute(inputs)

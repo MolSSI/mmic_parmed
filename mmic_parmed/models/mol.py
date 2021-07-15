@@ -24,7 +24,7 @@ class ParmedMol(ToolkitModel):
         return parmed.structure.Structure
 
     @classmethod
-    def isvalid(cls,data):
+    def isvalid(cls, data):
         """Makes sure the Structure object stores atoms."""
         if hasattr(data, "atoms"):
             if len(data.atoms):
@@ -92,6 +92,7 @@ class ParmedMol(ToolkitModel):
         inputs = {
             "schema_object": data,
             "schema_version": version or data.schema_version,
+            "schema_name": "mmel_input",
         }
         out = MolToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
@@ -131,6 +132,7 @@ class ParmedMol(ToolkitModel):
         """
         inputs = {
             "data_object": self.data,
+            "schema_name": "mmel_input",
             "schema_version": version,
             "keywords": kwargs,
         }
