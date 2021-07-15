@@ -16,6 +16,7 @@ dependencies:
 
     # Pip-only installs
   - pip:
+    - qcelemental
     - numpy
     - pydantic
     - git+https://github.com/parmed/parmed.git
