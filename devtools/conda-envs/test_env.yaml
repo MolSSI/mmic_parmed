@@ -16,6 +16,7 @@ dependencies:
 
     # Pip-only installs
   - pip:
+    - numpy
     - pydantic
     - git+https://github.com/parmed/parmed.git
     - git+https://github.com/MolSSI/mmic.git
