@@ -27,13 +27,18 @@ def test_mmic_parmed_imported():
 
 def test_parmed_to_mol(file, **kwargs):
     struct = parmed.load_file(file)
-    inputs = {"data_object": struct, "keywords": kwargs}
+    inputs = {
+        "data_object": struct,
+        "keywords": kwargs,
+        "schema_name": "mmel_input",
+        "schema_version": 1,
+    }
     return mmic_parmed.components.ParmedToMolComponent.compute(inputs)
 
 
 def test_mol_to_parmed(file):
     mmol = mm.models.molecule.mm_mol.Molecule.from_file(file)
-    inputs = {"schema_object": mmol}
+    inputs = {"schema_object": mmol, "schema_name": "mmel_input", "schema_version": 1}
     return mmic_parmed.components.MolToParmedComponent.compute(inputs)
 
 
