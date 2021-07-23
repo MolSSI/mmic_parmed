@@ -157,7 +157,7 @@ class FFToParmedComponent(TransComponent):
                     j,
                     order,
                 ),
-            ) in enumerate(mmff.bonds.indices):
+            ) in enumerate(mmff.bonds.connectivity):
                 btype = parmed.topologyobjects.BondType(
                     k=spring[bi], req=req[bi], list=pff.bond_types
                 )
@@ -182,7 +182,7 @@ class FFToParmedComponent(TransComponent):
             )
             angles_eq = convert(angles.angles, angles.angles_units, "degrees")
 
-            for ai, (i, j, k) in enumerate(mmff.angles.indices):
+            for ai, (i, j, k) in enumerate(mmff.angles.connectivity):
                 atype = parmed.topologyobjects.AngleType(
                     k=spring[ai], theteq=angles_eq[ai], list=pff.angle_types
                 )
@@ -212,7 +212,7 @@ class FFToParmedComponent(TransComponent):
             )
             periodicity = dihedrals.params.periodicity
 
-            for di, (i, j, k, l) in enumerate(dihedrals.indices):
+            for di, (i, j, k, l) in enumerate(dihedrals.connectivity):
                 if isinstance(energy[di], Iterable):
                     dtype = [
                         parmed.topologyobjects.DihedralType(
@@ -392,7 +392,7 @@ class ParmedToFFComponent(TransComponent):
             bonds = forcefield.bonded.Bonds(
                 params=params,
                 lengths=bonds_lengths,
-                indices=connectivity,
+                connectivity=connectivity,
                 form="Harmonic",
             )
         else:
@@ -435,7 +435,10 @@ class ParmedToFFComponent(TransComponent):
                 params = angle_types.get(angle_funct)(spring=angles_k)
 
             angles = forcefield.bonded.Angles(
-                params=params, angles=angles_, indices=angles_indices, form="Harmonic"
+                params=params,
+                angles=angles_,
+                connectivity=angles_indices,
+                form="Harmonic",
             )
         else:
             angles = None
@@ -549,6 +552,6 @@ class ParmedToFFComponent(TransComponent):
 
         return forcefield.bonded.Dihedrals(
             params=params,
-            indices=dihedrals_indices,
+            connectivity=dihedrals_indices,
             form=dihedral_types.get(funct).__name__,
         )
