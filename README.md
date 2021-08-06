@@ -9,7 +9,7 @@ This is part of the [MolSSI](http://molssi.org) Molecular Mechanics Interoperabl
 
 ![image](mmic_parmed/data/imgs/component.png)
 
-# API
+
 **mmic_parmed** provides 4 classes of translators for: molecules, forcefields, trajectories (incomplete), and simulation (incomplete).
 
 ## Models
