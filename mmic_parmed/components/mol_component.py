@@ -98,7 +98,7 @@ class MolToParmedComponent(TransComponent):
                 epsilon14=None,
             )
 
-            if mmol.substructs:
+            if mmol.substructs is not None:
                 resname, resnum = mmol.substructs[index]
             else:
                 resname, resnum = "UNK", 0
