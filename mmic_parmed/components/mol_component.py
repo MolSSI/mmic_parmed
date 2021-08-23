@@ -118,7 +118,7 @@ class MolToParmedComponent(TransComponent):
                 pmol.velocities, mmol.velocities_units, units_speed
             )
 
-        if mmol.connectivity:
+        if mmol.connectivity is not None:
             for (
                 i,
                 j,
