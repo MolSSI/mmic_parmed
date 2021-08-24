@@ -10,6 +10,7 @@ import os
 import parmed
 import mmelemental as mm
 import mm_data
+from pathlib import Path
 
 
 top_files = lambda ext: [
@@ -59,15 +60,17 @@ def test_io_methods(top_file):
     pff = mmic_parmed.models.ParmedFF.from_file(top_file)
     assert isinstance(pff.data, pff.dtype())
 
-    top_filename = mm.util.files.random_file(suffix=".top")
+    top_filename = Path("tmp.top")
 
-    pff.to_file(top_filename)
+    pff.to_file(top_filename.name)
+    assert top_filename.is_file()
     # assert filecmp.cmp(top_filename, top_file, shallow=False), f"ff.top != {top_file}"
-    os.remove(top_filename)
+    top_filename.unlink()
 
-    psf_filename = mm.util.files.random_file(suffix=".psf")
-    pff.to_file(psf_filename)
-    os.remove(psf_filename)
+    psf_filename = Path("tmp.psf")
+    pff.to_file(psf_filename.name)
+    assert psf_filename.is_file()
+    psf_filename.unlink()
 
     mff = pff.to_schema()
     assert isinstance(mff, mm.models.forcefield.ForceField)
