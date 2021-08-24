@@ -217,6 +217,9 @@ class ParmedToMolComponent(TransComponent):
             "masses_units": masses_units,
         }
 
+        if inputs.keywords.get("extras"):
+            input_dict.update(extras=inputs.keywords["extras"])
+
         return True, TransOutput(
             schema_version=inputs.schema_version,
             schema_name="mmel_output",
