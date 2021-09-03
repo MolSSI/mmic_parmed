@@ -1,4 +1,4 @@
-from mmelemental.models.molecule import Molecule
+from mmelemental.models import Molecule
 from typing import List, Tuple, Optional
 from mmelemental.util.units import convert
 import parmed
@@ -215,10 +215,8 @@ class ParmedToMolComponent(TransComponent):
             "connectivity": connectivity,
             "masses": masses,
             "masses_units": masses_units,
+            "extras": inputs.keywords.get("extras"),
         }
-
-        if inputs.keywords.get("extras"):
-            input_dict.update(extras=inputs.keywords["extras"])
 
         return True, TransOutput(
             schema_version=inputs.schema_version,
