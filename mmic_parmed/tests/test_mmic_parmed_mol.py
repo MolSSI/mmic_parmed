@@ -37,7 +37,7 @@ def test_parmed_to_mol(file, **kwargs):
 
 
 def test_mol_to_parmed(file):
-    mmol = mm.models.molecule.mm_mol.Molecule.from_file(file)
+    mmol = mm.models.Molecule.from_file(file)
     inputs = {"schema_object": mmol, "schema_name": "mmel_input", "schema_version": 1}
     return mmic_parmed.components.MolToParmedComponent.compute(inputs)
 
@@ -47,4 +47,4 @@ def test_io_methods(file):
     assert isinstance(pmol.data, pmol.dtype())
 
     mmol = pmol.to_schema()
-    assert isinstance(mmol, mm.models.molecule.Molecule)
+    assert isinstance(mmol, mm.models.Molecule)

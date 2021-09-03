@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from mmic_translator.models.base import ToolkitModel
-from mmelemental.models.molecule import Molecule
+from mmelemental.models import Molecule
 import parmed
 
 # ParmEd converter components
