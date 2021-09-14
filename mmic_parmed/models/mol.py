@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional
-from mmic_translator.models.base import ToolkitModel
+from mmic_translator.models import ToolkitModel, schema_input_default
 from mmelemental.models import Molecule
 import parmed
 
@@ -92,7 +92,7 @@ class ParmedMol(ToolkitModel):
         inputs = {
             "schema_object": data,
             "schema_version": version or data.schema_version,
-            "schema_name": "mmel_input",
+            "schema_name": schema_input_default,
         }
         out = MolToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
@@ -126,13 +126,13 @@ class ParmedMol(ToolkitModel):
         Parameters
         ----------
         version: str, optional
-            Schema specification version to comply with e.g. 1.0.1.
+            Schema specification version to comply with.
         **kwargs
             Additional kwargs to pass to the constructor.
         """
         inputs = {
             "data_object": self.data,
-            "schema_name": "mmel_input",
+            "schema_name": schema_input_default,
             "schema_version": version,
             "keywords": kwargs,
         }
