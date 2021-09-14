@@ -1,5 +1,5 @@
 from typing import Dict, Any, Optional
-from mmic_translator.models import ToolkitModel, schema_input_default
+from mmic_translator.models import ToolkitModel
 from mmelemental.models.forcefield.mm_ff import ForceField
 import parmed
 
@@ -75,7 +75,7 @@ class ParmedFF(ToolkitModel):
         inputs = {
             "schema_object": data,
             "schema_version": version or data.schema_version,
-            "schema_name": schema_input_default,
+            "schema_name": data.schema_name,
         }
         out = FFToParmedComponent.compute(inputs)
         return cls(data=out.data_object, units=out.data_units)
@@ -107,7 +107,7 @@ class ParmedFF(ToolkitModel):
         inputs = {
             "data_object": self.data,
             "schema_version": version,
-            "schema_name": schema_input_default,
+            "schema_name": kwargs.pop("schema_name", ForceField.default_schema_name),
             "keywords": kwargs,
         }
         out = ParmedToFFComponent.compute(inputs)
