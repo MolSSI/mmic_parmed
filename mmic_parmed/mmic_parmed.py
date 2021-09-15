@@ -6,29 +6,40 @@ Handles the primary functions
 """
 
 
-def canvas(with_attribution=True):
-    """
-    Placeholder function to show example docstring (NumPy format)
+# Handle versioneer
+from ._version import get_versions
 
-    Replace this function and doc string for your own project
+versions = get_versions()
+__version__ = versions["version"]
+__git_revision__ = versions["full-revisionid"]
+del get_versions, versions
 
-    Parameters
-    ----------
-    with_attribution : bool, Optional, default: True
-        Set whether or not to display who the quote is from
+# Need to update these lists
+molread_ext_maps = {
+    ".gro": "gro",
+    ".psf": "psf",
+    ".pdb": "pdb",
+    ".sdf": "sdf",
+    ".mol": "mol",
+    ".mol2": "mol2",
+    ".inpcrd": "inpcrd",
+}
 
-    Returns
-    -------
-    quote : str
-        Compiled string including quote and optional attribution
-    """
+molwrite_ext_maps = {
+    ".gro": "gro",
+    ".pdb": "pdb",
+    ".inpcrd": "inpcrd",
+}
 
-    quote = "The code is but a canvas to our imagination."
-    if with_attribution:
-        quote += "\n\t- Adapted from Henry David Thoreau"
-    return quote
-
-
-if __name__ == "__main__":
-    # Do something if this file is invoked on its own
-    print(canvas())
+ffread_ext_maps = {
+    ".psf": "psf",
+    ".top": "top",
+    ".prm": "prm",
+    ".prmtop": "prmtop",
+}
+ffwrite_ext_maps = {
+    ".psf": "psf",
+    ".top": "top",
+    ".prm": "prm",
+    ".prmtop": "prmtop",
+}
