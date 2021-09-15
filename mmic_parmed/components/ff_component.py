@@ -1,13 +1,14 @@
 from mmelemental.models import forcefield
+from cmselemental.util.decorators import classproperty
+from mmic.components import TacticComponent
 from mmic_translator import (
     TransInput,
     TransOutput,
-    __version__,
 )
-from mmic_translator.components import TransComponent
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Set
 from collections.abc import Iterable
 from mmelemental.util.units import convert
+from mmic_parmed.mmic_parmed import __version__
 import parmed
 
 provenance_stamp = {
@@ -39,8 +40,35 @@ im_dihedral_types = {
 # Need to fix: fudgeLJ, fudgeQQ
 
 
-class FFToParmedComponent(TransComponent):
+class FFToParmedComponent(TacticComponent):
     """A component for converting Molecule to ParmEd molecule object."""
+
+    @classmethod
+    def input(cls):
+        return TransInput
+
+    @classmethod
+    def output(cls):
+        return TransOutput
+
+    @classmethod
+    def get_version(cls) -> str:
+        """Finds program, extracts version, returns normalized version string.
+        Returns
+        -------
+        str
+            Return a valid, safe python version string.
+        """
+        raise NotImplementedError
+
+    @classproperty
+    def strategy_comps(cls) -> Set[str]:
+        """Returns the strategy component(s) this (tactic) component belongs to.
+        Returns
+        -------
+        Set[str]
+        """
+        return {"mmic_translator"}
 
     def execute(
         self,
@@ -66,13 +94,13 @@ class FFToParmedComponent(TransComponent):
             mmff.masses, mmff.masses_units, empty_atom.umass.unit.get_symbol()
         )
 
-        charges = TransComponent.get(mmff, "charges")
+        charges = getattr(mmff, "charges", None)
         charges = convert(
             charges, mmff.charges_units, empty_atom.ucharge.unit.get_symbol()
         )
 
-        atomic_numbers = TransComponent.get(mmff, "atomic_numbers")
-        atom_types = TransComponent.get(mmff, "defs")
+        atomic_numbers = getattr(mmff, "atomic_numbers", None)
+        atom_types = getattr(mmff, "defs", None)
 
         rmin, epsilon = self._get_nonbonded(mmff, empty_atom)
 
@@ -127,7 +155,7 @@ class FFToParmedComponent(TransComponent):
                 # polarizable=...,
             )
 
-            residues = TransComponent.get(mmff, "substructs")
+            residues = getattr(mmff, "substructs", None)
 
             if residues:
                 resname, resnum = residues[index]
@@ -139,7 +167,7 @@ class FFToParmedComponent(TransComponent):
             pff.add_atom(atom, resname, resnum, chain="", inscode="", segid="")
 
         # Bonds
-        bonds = TransComponent.get(mmff, "bonds")
+        bonds = getattr(mmff, "bonds", None)
         if bonds is not None:
             assert (
                 mmff.bonds.form == "Harmonic"
@@ -171,7 +199,7 @@ class FFToParmedComponent(TransComponent):
                 # pff.atoms[i].bond_to(pff.atoms[j])
 
         # Angles
-        angles = TransComponent.get(mmff, "angles")
+        angles = getattr(mmff, "angles", None)
         if angles is not None:
             assert (
                 mmff.angles.form == "Harmonic"
@@ -194,7 +222,7 @@ class FFToParmedComponent(TransComponent):
                 pff.angle_types.append(atype)
 
         # Dihedrals
-        dihedrals = TransComponent.get(mmff, "dihedrals")
+        dihedrals = getattr(mmff, "dihedrals", None)
         if dihedrals is not None:
             dihedrals = (
                 dihedrals.pop() if isinstance(dihedrals, list) else dihedrals
@@ -284,8 +312,35 @@ class FFToParmedComponent(TransComponent):
         return rmin, epsilon
 
 
-class ParmedToFFComponent(TransComponent):
+class ParmedToFFComponent(TacticComponent):
     """A component for converting ParmEd molecule to Molecule object."""
+
+    @classmethod
+    def input(cls):
+        return TransInput
+
+    @classmethod
+    def output(cls):
+        return TransOutput
+
+    @classmethod
+    def get_version(cls) -> str:
+        """Finds program, extracts version, returns normalized version string.
+        Returns
+        -------
+        str
+            Return a valid, safe python version string.
+        """
+        raise NotImplementedError
+
+    @classproperty
+    def strategy_comps(cls) -> Set[str]:
+        """Returns the strategy component(s) this (tactic) component belongs to.
+        Returns
+        -------
+        Set[str]
+        """
+        return {"mmic_translator"}
 
     def execute(
         self,

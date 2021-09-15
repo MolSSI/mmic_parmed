@@ -1,13 +1,14 @@
 from mmelemental.models import Molecule
-from typing import List, Tuple, Optional
+from mmic.components import TacticComponent
+from typing import List, Tuple, Optional, Set
 from mmelemental.util.units import convert
+from cmselemental.util.decorators import classproperty
+from mmic_parmed.mmic_parmed import __version__
 import parmed
 
 from mmic_translator import (
-    TransComponent,
     TransInput,
     TransOutput,
-    __version__,
 )
 
 provenance_stamp = {
@@ -19,8 +20,35 @@ provenance_stamp = {
 __all__ = ["MolToParmedComponent", "ParmedToMolComponent"]
 
 
-class MolToParmedComponent(TransComponent):
+class MolToParmedComponent(TacticComponent):
     """A component for converting Molecule to ParmEd molecule object."""
+
+    @classmethod
+    def input(cls):
+        return TransInput
+
+    @classmethod
+    def output(cls):
+        return TransOutput
+
+    @classmethod
+    def get_version(cls) -> str:
+        """Finds program, extracts version, returns normalized version string.
+        Returns
+        -------
+        str
+            Return a valid, safe python version string.
+        """
+        raise NotImplementedError
+
+    @classproperty
+    def strategy_comps(cls) -> Set[str]:
+        """Returns the strategy component(s) this (tactic) component belongs to.
+        Returns
+        -------
+        Set[str]
+        """
+        return {"mmic_translator"}
 
     def execute(
         self,
@@ -156,8 +184,35 @@ class MolToParmedComponent(TransComponent):
         )
 
 
-class ParmedToMolComponent(TransComponent):
+class ParmedToMolComponent(TacticComponent):
     """A component for converting ParmEd molecule to Molecule object."""
+
+    @classmethod
+    def input(cls):
+        return TransInput
+
+    @classmethod
+    def output(cls):
+        return TransOutput
+
+    @classmethod
+    def get_version(cls) -> str:
+        """Finds program, extracts version, returns normalized version string.
+        Returns
+        -------
+        str
+            Return a valid, safe python version string.
+        """
+        raise NotImplementedError
+
+    @classproperty
+    def strategy_comps(cls) -> Set[str]:
+        """Returns the strategy component(s) this (tactic) component belongs to.
+        Returns
+        -------
+        Set[str]
+        """
+        return {"mmic_translator"}
 
     def execute(
         self,
@@ -175,12 +230,12 @@ class ParmedToMolComponent(TransComponent):
         pmol = inputs.data_object
         geo_units, vel_units = None, None
 
-        geo = TransComponent.get(pmol, "coordinates")
+        geo = getattr(pmol, "coordinates", None)
         if geo is not None:  # General enough? hackish?
             geo = geo.flatten()
             geo_units = pmol.positions.unit.get_name()
 
-        vel = TransComponent.get(pmol, "velocities")
+        vel = getattr(pmol, "velocities", None)
         if vel is not None:
             vel = vel.flatten()
             vel_units = "angstrom/picosecond"  # hard-coded in ParmEd
