@@ -176,7 +176,7 @@ class MolToParmedComponent(TacticComponent):
 
         return True, TransOutput(
             schema_version=inputs.schema_version,
-            schema_name="mmel_output",
+            schema_name=inputs.schema_name,
             proc_input=inputs,
             data_object=pmol,
             success=True,
@@ -275,7 +275,7 @@ class ParmedToMolComponent(TacticComponent):
 
         return True, TransOutput(
             schema_version=inputs.schema_version,
-            schema_name="mmel_output",
+            schema_name=inputs.schema_name,
             proc_input=inputs,
             schema_object=Molecule(**input_dict),
             success=True,

@@ -280,7 +280,7 @@ class FFToParmedComponent(TacticComponent):
 
         return True, TransOutput(
             schema_version=1,
-            schema_name="mmel_output",
+            schema_name=inputs.schema_name,
             proc_input=inputs,
             data_object=pff,
             success=True,
@@ -533,7 +533,7 @@ class ParmedToFFComponent(TacticComponent):
         ff = forcefield.ForceField(**input_dict)
         return True, TransOutput(
             schema_version=inputs.schema_version,
-            schema_name="mmel_output",
+            schema_name=inputs.schema_name,
             proc_input=inputs,
             schema_object=ff,
             success=True,
