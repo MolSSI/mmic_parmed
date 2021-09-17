@@ -77,7 +77,16 @@ class MolToParmedComponent(TacticComponent):
 
         if mmol.masses is not None:
             masses = convert(
-                mmol.masses, mmol.masses_units, atom_empty.umass.unit.get_symbol()
+                mmol.masses, mmol.masses_units, atom_empty.umass.unit.get_name()
+            )
+        else:
+            masses = None
+
+        if mmol.partial_charges is not None:
+            charges = convert(
+                mmol.partial_charges,
+                mmol.partial_charges_units,
+                atom_empty.ucharge.unit.get_symbol(),
             )
         else:
             masses = None
@@ -101,7 +110,8 @@ class MolToParmedComponent(TacticComponent):
             atomic_number = (
                 atomic_numbers[index] if atomic_numbers is not None else None
             )
-            mass = masses[index] if masses is not None else None
+            mass = None if masses is None else masses[index]
+            charge = None if charges is None else charges[index]
 
             # Will likely lose FF-related info ... but then Molecule is not supposed to store any params specific to FFs
             atom = parmed.topologyobjects.Atom(
@@ -110,6 +120,7 @@ class MolToParmedComponent(TacticComponent):
                 name=label or "",  # do not use symb?,
                 type=label,
                 mass=mass,
+                charge=charge,
                 nb_idx=0,
                 solvent_radius=0.0,
                 screen=0.0,
@@ -247,6 +258,9 @@ class ParmedToMolComponent(TacticComponent):
         masses = [atom.mass for atom in pmol.atoms]
         masses_units = pmol.atoms[0].umass.unit.get_name()
 
+        charges = [atom.charge for atom in pmol.atoms]
+        charges_units = pmol.atoms[0].ucharge.unit.get_symbol()
+
         # If bond order is none, set it to 1.
         if hasattr(pmol, "bonds"):
             connectivity = [
@@ -270,6 +284,8 @@ class ParmedToMolComponent(TacticComponent):
             "connectivity": connectivity,
             "masses": masses,
             "masses_units": masses_units,
+            "partial_charges": charges,
+            "partial_charges_units": charges_units,
             "extras": inputs.keywords.get("extras"),
         }
 
