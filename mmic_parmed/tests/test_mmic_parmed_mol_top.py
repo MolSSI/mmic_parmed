@@ -31,6 +31,9 @@ def test_mmic_parmed_imported():
 
 def test_parmed_to_mol(cfile, ffile, **kwargs):
     struct = parmed.load_file(filename=ffile, xyz=cfile)
+    assert (
+        "NOT parameterized" not in struct.__repr__()
+    )  # hackish way of making sure struct is a parametrized molecule
     inputs = {
         "data_object": struct,
         "keywords": kwargs,
@@ -49,6 +52,7 @@ def test_mol_to_parmed(cfile, ffile):
 def test_io_methods(cfile, ffile):
     pmol = mmic_parmed.models.ParmedMol.from_file(cfile, ffile)
     assert isinstance(pmol.data, pmol.dtype())
+    assert "NOT parameterized" not in pmol.data
 
     mmol = pmol.to_schema()
     assert isinstance(mmol, mm.models.Molecule)
