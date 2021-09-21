@@ -89,7 +89,7 @@ class MolToParmedComponent(TacticComponent):
                 atom_empty.ucharge.unit.get_symbol(),
             )
         else:
-            masses = None
+            charges = None
 
         if mmol.atom_labels is not None:
             atom_labels = mmol.atom_labels
