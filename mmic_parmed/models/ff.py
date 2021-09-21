@@ -1,6 +1,6 @@
 from typing import Dict, Any, Optional
 from mmic_translator.models import ToolkitModel
-from mmelemental.models.forcefield.mm_ff import ForceField
+from mmelemental.models.forcefield import ForceField
 import parmed
 
 from mmic_parmed.components.ff_component import FFToParmedComponent
