@@ -45,7 +45,7 @@ def test_parmed_to_ff(top_file, **kwargs):
 
 
 def test_ff_to_parmed(json_file, **kwargs):
-    mm_ff = mm.models.forcefield.mm_ff.ForceField.from_file(json_file)
+    mm_ff = mm.models.ForceField.from_file(json_file)
     inputs = {
         "schema_object": mm_ff,
         "keywords": kwargs,
