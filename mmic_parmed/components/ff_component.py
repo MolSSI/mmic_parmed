@@ -79,8 +79,7 @@ class FFToParmedComponent(TacticComponent):
         timeout: Optional[int] = None,
     ) -> Tuple[bool, TransOutput]:
         """
-        Works for writing PDB files e.g. pmol.save("file.pdb") but fails for gro files
-        TODO: need to investigate this more. Routine is also very slow. Try to vectorize.
+        TODO: Routine is also very slow. Try to vectorize.
         Too many for loops. Can easily reduce these esp in the ParmedToFFComponent.
         """
         if isinstance(inputs, dict):
@@ -297,7 +296,7 @@ class FFToParmedComponent(TacticComponent):
             mmff.nonbonded.form == "LennardJones"
         ), "Only LJ potential supported for now"
 
-        lj_units = forcefield.nonbonded.potentials.lenjones.LennardJones.get_units()
+        lj_units = mmff.nonbonded.units
         scaling_factor = 2 ** (1.0 / 6.0)  # rmin = 2^(1/6) sigma
 
         rmin = mmff.nonbonded.params.sigma * scaling_factor
@@ -355,10 +354,10 @@ class ParmedToFFComponent(TacticComponent):
             inputs = self.input()(**inputs)
 
         ff = inputs.data_object
-        mm_units = forcefield.ForceField.get_units()
+        mm_units = forcefield.ForceField.default_units
 
         # Need to map these to potential types
-        lj_units = forcefield.nonbonded.potentials.lenjones.LennardJones.get_units()
+        lj_units = forcefield.nonbonded.potentials.lenjones.LennardJones.default_units
 
         atom = ff.atoms[0]
         bond = ff.bonds[0] if len(ff.bonds) else None
@@ -410,9 +409,9 @@ class ParmedToFFComponent(TacticComponent):
 
         if bond:
             bonds_units = (
-                forcefield.bonded.bonds.potentials.harmonic.Harmonic.get_units()
+                forcefield.bonded.bonds.potentials.harmonic.Harmonic.default_units
             )
-            bonds_units.update(forcefield.bonded.Bonds.get_units())
+            bonds_units.update(forcefield.bonded.Bonds.default_units)
 
             bond_req_factor = convert(
                 1.0, bond.type.ureq.unit.get_name(), bonds_units["lengths_units"]
@@ -455,9 +454,9 @@ class ParmedToFFComponent(TacticComponent):
 
         if angle:
             angles_units = (
-                forcefield.bonded.angles.potentials.harmonic.Harmonic.get_units()
+                forcefield.bonded.angles.potentials.harmonic.Harmonic.default_units
             )
-            angles_units.update(forcefield.bonded.Angles.get_units())
+            angles_units.update(forcefield.bonded.Angles.default_units)
 
             angle_theta_factor = convert(
                 1.0, angle.type.utheteq.unit.get_name(), angles_units["angles_units"]
@@ -546,9 +545,9 @@ class ParmedToFFComponent(TacticComponent):
             funct
         ), f"Functional form {funct} not supported in mmic_parmed"
 
-        dihedrals_units = dihedral_types[funct].get_units()  # model param units
+        dihedrals_units = dihedral_types[funct].default_units  # model param units
         dihedrals_units.update(
-            forcefield.bonded.Dihedrals.get_units()
+            forcefield.bonded.Dihedrals.default_units
         )  # global param units
 
         dihedral_phi_factor = convert(
