@@ -95,7 +95,7 @@ class ParmedMol(ToolkitModel):
             "schema_name": data.schema_name,
         }
         out = MolToParmedComponent.compute(inputs)
-        return cls(data=out.data_object, units=out.data_units)
+        return cls(data=out.data_object, data_units=out.data_units)
 
     def to_file(self, filename: str, dtype: str = None, mode: str = "w", **kwargs):
         """Writes the molecule to a file.
