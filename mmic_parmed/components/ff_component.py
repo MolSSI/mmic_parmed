@@ -43,23 +43,23 @@ im_dihedral_types = {
 class FFToParmedComponent(TacticComponent):
     """A component for converting Molecule to ParmEd molecule object."""
 
-    @classmethod
+    @classproperty
     def input(cls):
         return TransInput
 
-    @classmethod
+    @classproperty
     def output(cls):
         return TransOutput
 
-    @classmethod
-    def get_version(cls) -> str:
+    @classproperty
+    def version(cls) -> str:
         """Finds program, extracts version, returns normalized version string.
         Returns
         -------
         str
             Return a valid, safe python version string.
         """
-        raise NotImplementedError
+        ...
 
     @classproperty
     def strategy_comps(cls) -> Set[str]:
@@ -83,7 +83,7 @@ class FFToParmedComponent(TacticComponent):
         Too many for loops. Can easily reduce these esp in the ParmedToFFComponent.
         """
         if isinstance(inputs, dict):
-            inputs = self.input()(**inputs)
+            inputs = self.input(**inputs)
 
         empty_atom = parmed.topologyobjects.Atom()
         mmff = inputs.schema_object
@@ -314,23 +314,23 @@ class FFToParmedComponent(TacticComponent):
 class ParmedToFFComponent(TacticComponent):
     """A component for converting ParmEd molecule to Molecule object."""
 
-    @classmethod
+    @classproperty
     def input(cls):
         return TransInput
 
-    @classmethod
+    @classproperty
     def output(cls):
         return TransOutput
 
-    @classmethod
-    def get_version(cls) -> str:
+    @classproperty
+    def version(cls) -> str:
         """Finds program, extracts version, returns normalized version string.
         Returns
         -------
         str
             Return a valid, safe python version string.
         """
-        raise NotImplementedError
+        ...
 
     @classproperty
     def strategy_comps(cls) -> Set[str]:
@@ -351,7 +351,7 @@ class ParmedToFFComponent(TacticComponent):
     ) -> Tuple[bool, TransOutput]:
 
         if isinstance(inputs, dict):
-            inputs = self.input()(**inputs)
+            inputs = self.input(**inputs)
 
         ff = inputs.data_object
         mm_units = forcefield.ForceField.default_units

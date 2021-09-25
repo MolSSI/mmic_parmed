@@ -23,23 +23,23 @@ __all__ = ["MolToParmedComponent", "ParmedToMolComponent"]
 class MolToParmedComponent(TacticComponent):
     """A component for converting Molecule to ParmEd molecule object."""
 
-    @classmethod
+    @classproperty
     def input(cls):
         return TransInput
 
-    @classmethod
+    @classproperty
     def output(cls):
         return TransOutput
 
-    @classmethod
-    def get_version(cls) -> str:
+    @classproperty
+    def version(cls) -> str:
         """Finds program, extracts version, returns normalized version string.
         Returns
         -------
         str
             Return a valid, safe python version string.
         """
-        raise NotImplementedError
+        ...
 
     @classproperty
     def strategy_comps(cls) -> Set[str]:
@@ -63,7 +63,7 @@ class MolToParmedComponent(TacticComponent):
         TODO: need to investigate this more. Routine is also very slow. Try to vectorize.
         """
         if isinstance(inputs, dict):
-            inputs = self.input()(**inputs)
+            inputs = self.input(**inputs)
 
         mmol = inputs.schema_object
         ndim = mmol.ndim
@@ -198,23 +198,23 @@ class MolToParmedComponent(TacticComponent):
 class ParmedToMolComponent(TacticComponent):
     """A component for converting ParmEd molecule to Molecule object."""
 
-    @classmethod
+    @classproperty
     def input(cls):
         return TransInput
 
-    @classmethod
+    @classproperty
     def output(cls):
         return TransOutput
 
-    @classmethod
-    def get_version(cls) -> str:
+    @classproperty
+    def version(cls) -> str:
         """Finds program, extracts version, returns normalized version string.
         Returns
         -------
         str
             Return a valid, safe python version string.
         """
-        raise NotImplementedError
+        ...
 
     @classproperty
     def strategy_comps(cls) -> Set[str]:
@@ -235,7 +235,7 @@ class ParmedToMolComponent(TacticComponent):
     ) -> Tuple[bool, TransOutput]:
 
         if isinstance(inputs, dict):
-            inputs = self.input()(**inputs)
+            inputs = self.input(**inputs)
 
         # I think parmed.Structure does not store forces
         pmol = inputs.data_object
