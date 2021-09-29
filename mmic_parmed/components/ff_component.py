@@ -2,17 +2,17 @@ from mmelemental.models import forcefield
 from cmselemental.util.decorators import classproperty
 from mmic.components import TacticComponent
 from mmic_translator import (
-    TransInput,
-    TransOutput,
+    InputTrans,
+    OutputTrans,
 )
 from typing import List, Tuple, Optional, Set
 from collections.abc import Iterable
 from mmelemental.util.units import convert
-from mmic_parmed.mmic_parmed import __version__
+from mmic_parmed.mmic_parmed import __package__, __version__
 import parmed
 
 provenance_stamp = {
-    "creator": "mmic_parmed",
+    "creator": __package__,
     "version": __version__,
     "routine": __name__,
 }
@@ -45,11 +45,11 @@ class FFToParmedComponent(TacticComponent):
 
     @classproperty
     def input(cls):
-        return TransInput
+        return InputTrans
 
     @classproperty
     def output(cls):
-        return TransOutput
+        return OutputTrans
 
     @classproperty
     def version(cls) -> str:
@@ -72,12 +72,12 @@ class FFToParmedComponent(TacticComponent):
 
     def execute(
         self,
-        inputs: TransInput,
+        inputs: InputTrans,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, TransOutput]:
+    ) -> Tuple[bool, OutputTrans]:
         """
         TODO: Routine is also very slow. Try to vectorize.
         Too many for loops. Can easily reduce these esp in the ParmedToFFComponent.
@@ -277,7 +277,7 @@ class FFToParmedComponent(TacticComponent):
                 )
                 pff.dihedral_types.append(dtype)
 
-        return True, TransOutput(
+        return True, OutputTrans(
             schema_version=1,
             schema_name=inputs.schema_name,
             proc_input=inputs,
@@ -316,11 +316,11 @@ class ParmedToFFComponent(TacticComponent):
 
     @classproperty
     def input(cls):
-        return TransInput
+        return InputTrans
 
     @classproperty
     def output(cls):
-        return TransOutput
+        return OutputTrans
 
     @classproperty
     def version(cls) -> str:
@@ -343,12 +343,12 @@ class ParmedToFFComponent(TacticComponent):
 
     def execute(
         self,
-        inputs: TransInput,
+        inputs: InputTrans,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, TransOutput]:
+    ) -> Tuple[bool, OutputTrans]:
 
         if isinstance(inputs, dict):
             inputs = self.input(**inputs)
@@ -530,7 +530,7 @@ class ParmedToFFComponent(TacticComponent):
         }
 
         ff = forcefield.ForceField(**input_dict)
-        return True, TransOutput(
+        return True, OutputTrans(
             schema_version=inputs.schema_version,
             schema_name=inputs.schema_name,
             proc_input=inputs,

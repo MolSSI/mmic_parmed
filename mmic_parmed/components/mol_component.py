@@ -7,8 +7,8 @@ from mmic_parmed.mmic_parmed import __version__
 import parmed
 
 from mmic_translator import (
-    TransInput,
-    TransOutput,
+    InputTrans,
+    OutputTrans,
 )
 
 provenance_stamp = {
@@ -25,11 +25,11 @@ class MolToParmedComponent(TacticComponent):
 
     @classproperty
     def input(cls):
-        return TransInput
+        return InputTrans
 
     @classproperty
     def output(cls):
-        return TransOutput
+        return OutputTrans
 
     @classproperty
     def version(cls) -> str:
@@ -52,12 +52,12 @@ class MolToParmedComponent(TacticComponent):
 
     def execute(
         self,
-        inputs: TransInput,
+        inputs: InputTrans,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, TransOutput]:
+    ) -> Tuple[bool, OutputTrans]:
         """
         Works for writing PDB files e.g. pmol.save("file.pdb") but fails for gro files
         TODO: need to investigate this more. Routine is also very slow. Try to vectorize.
@@ -185,7 +185,7 @@ class MolToParmedComponent(TacticComponent):
         #            )
         #        )
 
-        return True, TransOutput(
+        return True, OutputTrans(
             schema_version=inputs.schema_version,
             schema_name=inputs.schema_name,
             proc_input=inputs,
@@ -200,39 +200,43 @@ class ParmedToMolComponent(TacticComponent):
 
     @classproperty
     def input(cls):
-        return TransInput
+        return InputTrans
 
     @classproperty
     def output(cls):
-        return TransOutput
+        return OutputTrans
 
     @classproperty
     def version(cls) -> str:
         """Finds program, extracts version, returns normalized version string.
+
         Returns
         -------
         str
             Return a valid, safe python version string.
+
         """
         ...
 
     @classproperty
     def strategy_comps(cls) -> Set[str]:
         """Returns the strategy component(s) this (tactic) component belongs to.
+
         Returns
         -------
         Set[str]
+
         """
         return {"mmic_translator"}
 
     def execute(
         self,
-        inputs: TransInput,
+        inputs: InputTrans,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, TransOutput]:
+    ) -> Tuple[bool, OutputTrans]:
 
         if isinstance(inputs, dict):
             inputs = self.input(**inputs)
@@ -289,7 +293,7 @@ class ParmedToMolComponent(TacticComponent):
             "extras": inputs.keywords.get("extras"),
         }
 
-        return True, TransOutput(
+        return True, OutputTrans(
             schema_version=inputs.schema_version,
             schema_name=inputs.schema_name,
             proc_input=inputs,
