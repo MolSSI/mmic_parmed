@@ -2,17 +2,17 @@ from mmelemental.models import forcefield
 from cmselemental.util.decorators import classproperty
 from mmic.components import TacticComponent
 from mmic_translator import (
-    TransInput,
-    TransOutput,
+    InputTrans,
+    OutputTrans,
 )
 from typing import List, Tuple, Optional, Set
 from collections.abc import Iterable
 from mmelemental.util.units import convert
-from mmic_parmed.mmic_parmed import __version__
+from mmic_parmed.mmic_parmed import __package__, __version__
 import parmed
 
 provenance_stamp = {
-    "creator": "mmic_parmed",
+    "creator": __package__,
     "version": __version__,
     "routine": __name__,
 }
@@ -43,23 +43,23 @@ im_dihedral_types = {
 class FFToParmedComponent(TacticComponent):
     """A component for converting Molecule to ParmEd molecule object."""
 
-    @classmethod
+    @classproperty
     def input(cls):
-        return TransInput
+        return InputTrans
 
-    @classmethod
+    @classproperty
     def output(cls):
-        return TransOutput
+        return OutputTrans
 
-    @classmethod
-    def get_version(cls) -> str:
+    @classproperty
+    def version(cls) -> str:
         """Finds program, extracts version, returns normalized version string.
         Returns
         -------
         str
             Return a valid, safe python version string.
         """
-        raise NotImplementedError
+        ...
 
     @classproperty
     def strategy_comps(cls) -> Set[str]:
@@ -72,18 +72,18 @@ class FFToParmedComponent(TacticComponent):
 
     def execute(
         self,
-        inputs: TransInput,
+        inputs: InputTrans,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, TransOutput]:
+    ) -> Tuple[bool, OutputTrans]:
         """
         TODO: Routine is also very slow. Try to vectorize.
         Too many for loops. Can easily reduce these esp in the ParmedToFFComponent.
         """
         if isinstance(inputs, dict):
-            inputs = self.input()(**inputs)
+            inputs = self.input(**inputs)
 
         empty_atom = parmed.topologyobjects.Atom()
         mmff = inputs.schema_object
@@ -277,7 +277,7 @@ class FFToParmedComponent(TacticComponent):
                 )
                 pff.dihedral_types.append(dtype)
 
-        return True, TransOutput(
+        return True, OutputTrans(
             schema_version=1,
             schema_name=inputs.schema_name,
             proc_input=inputs,
@@ -314,23 +314,23 @@ class FFToParmedComponent(TacticComponent):
 class ParmedToFFComponent(TacticComponent):
     """A component for converting ParmEd molecule to Molecule object."""
 
-    @classmethod
+    @classproperty
     def input(cls):
-        return TransInput
+        return InputTrans
 
-    @classmethod
+    @classproperty
     def output(cls):
-        return TransOutput
+        return OutputTrans
 
-    @classmethod
-    def get_version(cls) -> str:
+    @classproperty
+    def version(cls) -> str:
         """Finds program, extracts version, returns normalized version string.
         Returns
         -------
         str
             Return a valid, safe python version string.
         """
-        raise NotImplementedError
+        ...
 
     @classproperty
     def strategy_comps(cls) -> Set[str]:
@@ -343,15 +343,15 @@ class ParmedToFFComponent(TacticComponent):
 
     def execute(
         self,
-        inputs: TransInput,
+        inputs: InputTrans,
         extra_outfiles: Optional[List[str]] = None,
         extra_commands: Optional[List[str]] = None,
         scratch_name: Optional[str] = None,
         timeout: Optional[int] = None,
-    ) -> Tuple[bool, TransOutput]:
+    ) -> Tuple[bool, OutputTrans]:
 
         if isinstance(inputs, dict):
-            inputs = self.input()(**inputs)
+            inputs = self.input(**inputs)
 
         ff = inputs.data_object
         mm_units = forcefield.ForceField.default_units
@@ -530,7 +530,7 @@ class ParmedToFFComponent(TacticComponent):
         }
 
         ff = forcefield.ForceField(**input_dict)
-        return True, TransOutput(
+        return True, OutputTrans(
             schema_version=inputs.schema_version,
             schema_name=inputs.schema_name,
             proc_input=inputs,
