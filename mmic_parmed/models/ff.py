@@ -78,7 +78,7 @@ class ParmedFF(ToolkitModel):
             "schema_name": data.schema_name,
         }
         out = FFToParmedComponent.compute(inputs)
-        return cls(data=out.data_object, units=out.data_units)
+        return cls(data=out.data_object, data_units=out.data_units)
 
     def to_file(self, filename: str, dtype: str = None, **kwargs):
         """Writes the forcefield to a file.
@@ -93,7 +93,7 @@ class ParmedFF(ToolkitModel):
         """
         if dtype:
             kwargs["format"] = dtype
-        self.data.save(filename, **kwargs)
+        self.data.save(filename, overwrite = True, **kwargs)
 
     def to_schema(self, version: Optional[int] = 0, **kwargs) -> ForceField:
         """Converts the forcefield to MMSchema ForceField object.
