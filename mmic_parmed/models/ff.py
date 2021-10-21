@@ -93,7 +93,7 @@ class ParmedFF(ToolkitModel):
         """
         if dtype:
             kwargs["format"] = dtype
-        self.data.save(filename, overwrite = True, **kwargs)
+        self.data.save(filename, **kwargs)
 
     def to_schema(self, version: Optional[int] = 0, **kwargs) -> ForceField:
         """Converts the forcefield to MMSchema ForceField object.
