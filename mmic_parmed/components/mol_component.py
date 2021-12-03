@@ -243,7 +243,10 @@ class ParmedToMolComponent(TacticComponent):
 
         # I think parmed.Structure does not store forces
         pmol = inputs.data_object
-        geo_units, vel_units = None, None
+        geo_units = Molecule.default_units[
+            "geometry_units"
+        ]  # update later if specified
+        vel_units = Molecule.default_units["velocities_units"]
 
         geo = getattr(pmol, "coordinates", None)
         if geo is not None:  # General enough? hackish?
