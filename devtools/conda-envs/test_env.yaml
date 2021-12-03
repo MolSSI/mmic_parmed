@@ -22,7 +22,6 @@ dependencies:
     - mmelemental
     - qcelemental
     - mmic
-    - qcelemental
     - git+https://github.com/parmed/parmed.git
     - git+https://github.com/MolSSI/mmic_translator.git
     - git+https://github.com/MolSSI/mm_data.git
