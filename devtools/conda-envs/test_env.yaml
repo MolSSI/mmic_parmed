@@ -16,12 +16,11 @@ dependencies:
 
     # Pip-only installs
   - pip:
-    - qcelemental
     - numpy
     - pydantic
+    - cmselemental
+    - mmic
     - git+https://github.com/parmed/parmed.git
     - git+https://github.com/MolSSI/mmelemental.git
     - git+https://github.com/MolSSI/mmic_translator.git
     - git+https://github.com/MolSSI/mm_data.git
-    - cmselemental
-    - mmic
