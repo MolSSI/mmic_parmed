@@ -78,7 +78,7 @@ class ParmedFF(ToolkitModel):
             "schema_name": data.schema_name,
         }
         out = FFToParmedComponent.compute(inputs)
-        return cls(data=out.data_object, units=out.data_units)
+        return cls(data=out.data_object, data_units=out.data_units)
 
     def to_file(self, filename: str, dtype: str = None, **kwargs):
         """Writes the forcefield to a file.
